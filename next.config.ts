@@ -7,10 +7,13 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'tr.rbxcdn.com',
-        port: '',
-        pathname: '/**',
-        search: '',
+        pathname: '/**'
       },
+      {
+        protocol: 'https',
+        hostname: 'static.trptools.com',
+        pathname: '/**'
+      }
     ],
   },
 };

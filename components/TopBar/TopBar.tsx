@@ -5,7 +5,7 @@ import LoggedInUser from "./LoggedInUser"
 const TopBar = () => {
     return <div className="fixed w-screen h-16 bg-[#272727] flex flex-row items-center shadow-md select-none">
         <div className="flex flex-row items-center">
-            <LogoTopBarComponent src='/icon.png' href="/" />
+            <LogoTopBarComponent src='https://static.trptools.com/icon.webp' href="/" />
             <TopBarComponent href="/groups">Groups</TopBarComponent>
             <TopBarComponent href="/shifts">Shifts</TopBarComponent>
             <TopBarComponent href="/tools">Tools</TopBarComponent>
