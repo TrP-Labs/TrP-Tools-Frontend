@@ -22,7 +22,9 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} antialiased bg-[#1d1d1d]`}>
         <TopBar />
-        {children}
+        <div className="mt-16">
+          {children}
+        </div>
       </body>
     </html>
   );
