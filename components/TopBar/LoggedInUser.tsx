@@ -34,8 +34,6 @@ const LoginButton = () => {
 const LoggedInUser = ({renderFunction} : {renderFunction : Function}) => {
     const [data, status] = useFetchData(useSession)
     const [isClicked, setIsClicked] = useState(false)
-    const [, setRender] = useState(0);
-    const forceRender = () => setRender(prev => prev + 1);
 
     if (status === "loading") {return <LoggedInSkeleton />;}
     if (!data) {return <LoginButton />;}
