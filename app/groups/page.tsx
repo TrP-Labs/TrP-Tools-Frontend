@@ -2,7 +2,7 @@ import List from "@/components/ItemDisplay/List"
 import ImageItem from "@/components/ItemDisplay/ImageItem"
 
 const Group = () => {
-    return <div className="flex flex-col">
+    return <div className="flex flex-col mx-auto w-[95%]">
         <List name="List">
             <h1></h1>
             {/*

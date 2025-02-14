@@ -1,5 +1,6 @@
 "use client"
 import { useRef, useState, useEffect } from "react";
+import PageBox from "@/components/PageBox";
 
 const List = ({name, children} : {name : string, children : React.ReactNode}) => {
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -33,7 +34,7 @@ const List = ({name, children} : {name : string, children : React.ReactNode}) =>
         updateScrollStates()
       }, []);
 
-    return <div className="w-[95%] p-3 bg-[#272727] rounded-md shadow-md mx-auto mt-5">
+    return <PageBox>
         <div className="mb-3 flex flex-row">
            <h1 className="text-3xl font-bold">{name}</h1> 
            <div className="ml-auto">
@@ -45,7 +46,7 @@ const List = ({name, children} : {name : string, children : React.ReactNode}) =>
         <div className="flex flex-row overflow-hidden flex-shrink-0" ref={scrollContainerRef}>
             {children}
         </div>
-    </div>
+    </PageBox>
 }
 
 export default List 
