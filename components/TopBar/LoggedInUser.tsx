@@ -2,18 +2,12 @@
 import Image from "next/image"
 import Link from "next/link"
 import TopBarButton from "./TopBarButton";
-import { useState, useCallback } from "react";
+import { useState, useContext } from "react";
 import { redirect } from 'next/navigation';
 
+import { AuthContext } from "@/utilityComponents/AuthProvider";
 import Login from '@/app/auth/login'
-import getSession from "@/app/auth/session";
 import RevokeSession from "@/app/auth/revokeSession";
-import userResponse from "@/types/actionResponses/userResponse";
-import useFetchData from "@/hooks/useFetchData";
-
-const useSession = async () : Promise<userResponse | undefined> => {
-    return await getSession()
-}
 
 const LoggedInSkeleton = () => {
      return <>
@@ -32,7 +26,11 @@ const LoginButton = () => {
 }
 
 const LoggedInUser = ({renderFunction} : {renderFunction : Function}) => {
-    const [data, status] = useFetchData(useSession)
+    //const [data, status] = useFetchData(useSession)
+    const sessionContext = useContext(AuthContext)
+    const status = sessionContext?.loaded
+    const data = sessionContext?.session
+
     const [isClicked, setIsClicked] = useState(false)
 
     if (status === "loading") {return <LoggedInSkeleton />;}

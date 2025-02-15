@@ -18,6 +18,7 @@ model User {
   createdAt     DateTime @default(now())
 
   identityToken String
+  activeIdentityToken String?
   groupToken    String?
 
   sessions      Session[]
@@ -30,7 +31,27 @@ model Session {
   userId        String
   user          User     @relation(fields: [userId], references: [Id])
 
-  lastUsed      DateTime
+  lastUsed      DateTime @updatedAt
   expiresAt     DateTime
   createdAt     DateTime @default(now())
+}
+
+model RankRelation {
+  id            String @id @unique @default(uuid())
+  robloxId            String @unique
+  color         String
+  visible       Boolean
+
+  permission_manage Boolean
+  permission_host Boolean
+  permission_dispatch Boolean
+
+  group         Group @relation(fields: [groupId], references: [id])
+  groupId       String
+}
+
+model Group {
+  id            String @id @unique @default(uuid())
+  robloxId      String
+  ranks         RankRelation[]
 }

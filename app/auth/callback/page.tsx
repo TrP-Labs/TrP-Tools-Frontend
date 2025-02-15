@@ -25,7 +25,7 @@ const CallbackPage = () => {
         try {
           const success = await CallbackRoute(code, state); // ✅ Call the server action directly
           if (success) {
-            router.push('/dashboard');
+            router.push('/');
           } else {
             router.push('/error?message=OAuth process failed');
           }

@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Noto_Sans } from "next/font/google";
 import "./globals.css";
 import TopBar from "@/components/TopBar/TopBar";
+import getSession from "./auth/session";
+import AuthProvider from "@/utilityComponents/AuthProvider";
 
 const geistSans = Noto_Sans({
   variable: "--font-geist-sans",
@@ -18,13 +20,17 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const SessionData = getSession()
   return (
     <html lang="en">
       <body className={`${geistSans.variable} antialiased bg-[#1d1d1d]`}>
-        <TopBar />
-        <div className="mt-16">
-          {children}
-        </div>
+        
+        <AuthProvider SessionData={SessionData}>
+          <TopBar />
+          <div className="mt-16">
+            {children}
+          </div>
+        </AuthProvider>
       </body>
     </html>
   );
