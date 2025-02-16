@@ -17,9 +17,8 @@ const layout = ({children} : {children : React.ReactNode}) => {
     }, [loading, user, router]);
 
     if (loading == "loading") {
-        console.log(loading, "loading")
         return <div className="flex min-h-screen items-center justify-center">
-        <Loading title="Loading dashboard..." description="Fetching groups and authenticating user..." />
+        <Loading title="Authenticating" description="Verifying you can access the dashboard..." />
       </div>
     } 
 
