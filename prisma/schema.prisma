@@ -38,7 +38,7 @@ model Session {
 
 model RankRelation {
   id            String @id @unique @default(uuid())
-  robloxId            String @unique
+  robloxId      String @unique
   color         String
   visible       Boolean
 
