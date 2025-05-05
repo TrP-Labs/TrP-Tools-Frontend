@@ -10,7 +10,7 @@ export default async function Home() {
   */
   return (
     <div>
-      <h1>haii</h1>
+      
     </div>
   );
 }

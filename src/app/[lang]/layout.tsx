@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Locale } from "@/../i18n-config";
 import "@/app/globals.css";
 
 import Header from '@/components/topbar/Header'
@@ -20,14 +21,16 @@ export const metadata: Metadata = {
 };
 
 const  RootLayout = ({
+  params,
   children,
 }: Readonly<{
   children: React.ReactNode;
+  params: { lang: Locale };
 }>) => {
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <Header />
+        <Header params={params} />
         {children}
       </body>
     </html>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import getUserInfo from "@/app/api/roblox/basicuser";
 import TopBarButton from "./TopBarButton";
 import logout from "@/app/api/account/logout";
+import { type getStrings } from "@/app/strings"
 
 const LoggedInSkeleton = () => {
      return <>
@@ -24,7 +25,7 @@ const LoginButton = () => {
     </button>
 }
 
-const LoggedInUser = ({renderFunction, robloxId} : {renderFunction : Function, robloxId : string | null}) => {
+const LoggedInUser = ({renderFunction, robloxId, strings} : {renderFunction : Function, robloxId : string | null, strings: Awaited<ReturnType<typeof getStrings>>["loginMenu"];}) => {
     const [data, setData] = useState<any>(null)
     const [loading, setLoading] = useState(true)
     const [isClicked, setIsClicked] = useState(false)
@@ -64,18 +65,18 @@ const LoggedInUser = ({renderFunction, robloxId} : {renderFunction : Function, r
         </div>
 
         <div className={`absolute top-[70px] w-full bg-[#313131] h-48 rounded-xl ${isClicked ? 'scale-100' : 'scale-0'} transition-transform duration-100 flex flex-col justify-evenly origin-top items-center`}>
-            <Link className="w-full flex justify-center" href={`/users/${data.userId}`}><TopBarButton>Profile</TopBarButton></Link>
-            <Link className="w-full flex justify-center" href={'/settings'}><TopBarButton>Settings</TopBarButton></Link>
-            <button className="w-full" onClick={async () => {await logout(); renderFunction(); router.push('/');}}><TopBarButton>Logout</TopBarButton></button>
+            <Link className="w-full flex justify-center" href={`/users/${data.userId}`}><TopBarButton>{strings.profile}</TopBarButton></Link>
+            <Link className="w-full flex justify-center" href={'/settings'}><TopBarButton>{strings.settings}</TopBarButton></Link>
+            <button className="w-full" onClick={async () => {await logout(); renderFunction(); router.push('/');}}><TopBarButton>{strings.logout}</TopBarButton></button>
         </div>
     </div>
 }
 
-const LoggedInUserContainer = ({ robloxId } : {robloxId : string | null}) => {
+const LoggedInUserContainer = ({ robloxId, strings } : {robloxId : string | null; strings: Awaited<ReturnType<typeof getStrings>>["loginMenu"];}) => {
     const [renderState, setRender] = useState(0);
     const forceRender = () => setRender(prev => prev + 1);
 
-    return <LoggedInUser key={renderState} renderFunction={forceRender} robloxId={robloxId} />
+    return <LoggedInUser key={renderState} renderFunction={forceRender} robloxId={robloxId} strings={strings} />
 }
 
 export default LoggedInUserContainer

@@ -2,8 +2,13 @@ import Link from "next/link"
 import LoggedInUserContainer from "./Login"
 import { getCurrentSession } from "@/lib/auth/session"
 import HeaderSection from "./HeaderSection";
+import { Locale } from "@/../i18n-config";
+import { getStrings } from "@/app/strings";
 
-export default async function Header() {
+export default async function Header({ params } : {params: { lang: Locale }}) {
+    const { lang } = params;
+    const strings = await getStrings(lang);
+
     const { user } = await getCurrentSession();
     const robloxId : string | null = user?.robloxId || null
 
@@ -17,10 +22,14 @@ export default async function Header() {
                 className="ml-3 mr-2 hover:scale-110 transition-all"></img>
             </Link>
 
-            <HeaderSection href="/home" >Home</HeaderSection>
+            <HeaderSection href="/groups">{strings.topbar.groups}</HeaderSection>
+            <HeaderSection href="/shifts">{strings.topbar.shifts}</HeaderSection>
+            <HeaderSection href="/tools">{strings.topbar.tools}</HeaderSection>
+            <HeaderSection href="/dashboard">{strings.topbar.dashboard}</HeaderSection>
+            <HeaderSection href="https://trolleybus.wiki">{strings.topbar.wiki}</HeaderSection>
         </div>
         <div className="flex flew-row items-center ml-auto mr-3">
-            <LoggedInUserContainer robloxId={robloxId} />
+            <LoggedInUserContainer robloxId={robloxId} strings={strings.loginMenu} />
         </div>
     </div>
 }
