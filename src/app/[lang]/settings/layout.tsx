@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation"
 import getLoggedIn from "../../api/account/getLoggedIn"
 import { IconBrush, IconUser } from "@tabler/icons-react"
 
+import { getStrings } from "@/app/strings"
 
 type SettingList = {
     ID: number;
@@ -17,14 +18,14 @@ const SettingsPages: SettingList[] = [
     {
         ID: 1,
         Icon: IconBrush,
-        Text: "settings.appearance",
+        Text: "appearance",
         url: '/settings/appearance',
         RequiresAccount: false
     },
     {
         ID: 2,
         Icon: IconUser,
-        Text: "settings.account",
+        Text: "account",
         url: '/settings/account',
         RequiresAccount: true
     },
@@ -38,8 +39,7 @@ const SettingsButton = ({ children, id, selected, url, setSelected }: { children
 }
 
 
-const SettingsLayout = ({ children }: { children: React.ReactNode }) => {
-    
+const SettingsLayout = ({ children, strings }: { children: React.ReactNode; strings: Awaited<ReturnType<typeof getStrings>>["settings"]; }) => {
     const [selected, setSelected] = useState(1)
     
     const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
@@ -61,7 +61,7 @@ const SettingsLayout = ({ children }: { children: React.ReactNode }) => {
             .map(({ ID, Icon, Text, url}) => (
                 <SettingsButton key={ID} id={ID} selected={selected} setSelected={setSelected} url={url}>
                     <Icon size={23} stroke={1.5} />
-                    <span className="ml-2">{Text}</span>
+                    <span className="ml-2">{strings[Text as keyof typeof strings]}</span>
                 </SettingsButton>
             ))}
         </div>
