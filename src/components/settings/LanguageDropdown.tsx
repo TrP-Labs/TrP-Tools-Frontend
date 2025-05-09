@@ -10,14 +10,15 @@ type displaysettings = {
   };
 
 const LanguageSettings : displaysettings = {
+    'browser' : {'id' : 'browser', 'display' : "Auto"},
     'en' : {'id' : 'en', 'display' : 'English'},
     'ru' : {'id' : 'ru', 'display' : 'Русский'}
 }
 
-const LanguageDropdown = ({currentSelection} : {currentSelection : Locale}) => {
+const LanguageDropdown = ({currentSelection} : {currentSelection : string}) => {
     const router = useRouter()
 
-    const ChangeLanguage = (result : Locale) => {
+    const ChangeLanguage = (result : string) => {
         Cookies.set('preferredLanguage', result)
         router.refresh()
     }
