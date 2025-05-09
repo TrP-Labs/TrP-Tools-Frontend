@@ -12,7 +12,7 @@ export default async function Header({ params } : {params: { lang: Locale }}) {
     const { user } = await getCurrentSession();
     const robloxId : string | null = user?.robloxId || null
 
-    return <div className="w-screen h-16 top-0 bg-[#272727] flex flex-row items-center shadow-md select-none">
+    return <div className="w-screen h-16 top-0 bg-[var(--header)] flex flex-row items-center shadow-md select-none">
         <div className="flex flex-row items-center">
             <Link href={'/'}>
                 <img src={'https://static.trptools.com/icon.webp'} 

@@ -12,6 +12,7 @@ const AppearanceSettings = async ({params} : {params: { lang: Locale }}) => {
 
     const cookieStore = await cookies()
     const preferredLanguage = cookieStore.get('preferredLanguage')
+    const preferredTheme = cookieStore.get('preferredTheme')
 
     return <SettingsPage name={strings.settings.categories.appearance}>
         <div>
@@ -21,7 +22,7 @@ const AppearanceSettings = async ({params} : {params: { lang: Locale }}) => {
 
         <div className="mt-5">
             <h1 className="text-3xl mb-2">{strings.settings.categories.theme}</h1>
-            <ThemeDropdown currentSelection={'dim'} strings={strings.settings.themes}/>
+            <ThemeDropdown currentSelection={preferredTheme?.value || 'dim'} strings={strings.settings.themes}/>
         </div>
     </SettingsPage>
 }

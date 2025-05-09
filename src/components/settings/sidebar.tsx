@@ -54,7 +54,7 @@ const Sidebar = ({ children, strings }: { children: React.ReactNode; strings: Aw
     if (isLoggedIn === null) return null; // can be a loader
 
     return <div className="flex h-screen">
-        <div className="left-0 h-screen w-48 bg-[#353535]">
+        <div className="left-0 h-screen w-48 bg-[var(--foreground)]">
             {SettingsPages
             .filter(({ RequiresAccount }) => !RequiresAccount || isLoggedIn)
             .map(({ ID, Icon, Text, url}) => (

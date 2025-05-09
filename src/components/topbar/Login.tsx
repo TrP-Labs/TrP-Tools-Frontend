@@ -56,15 +56,15 @@ const LoggedInUser = ({renderFunction, robloxId, strings} : {renderFunction : Fu
 
     return <div className="relative group"
     onClick={() => {setIsClicked(!isClicked)}}>
-        <div className={`flex flex-row cursor-pointer hover:bg-[#313131] active:bg-[#414141] ${isClicked ? "bg-[#313131]" : null} p-1 transition-colors rounded-xl`}>
-            <img className="w-12 h-12 mr-2 rounded-full bg-[#3a3a3a]" src={data.profileImage || '/icon.png'} alt='Your profile picture' width={48} height={48} />
+        <div className={`flex flex-row cursor-pointer hover:bg-[var(--foreground)] active:bg-[var(--background-secondary-muted)] ${isClicked ? "bg-[var(--background-secondary)]" : null} p-1 transition-colors rounded-xl`}>
+            <img className="w-12 h-12 mr-2 rounded-full bg-[var(--background-muted)]" src={data.profileImage || '/icon.png'} alt='Your profile picture' width={48} height={48} />
             <div className="flex flex-col h-12 items-center">
                 <span className="w-32 h-6 mr-auto font-medium"> {data.displayName} </span>
                 <span className="w-24 h-6 mr-auto text-sm font-sm text-gray-400"> @{data.username} </span>
             </div>
         </div>
 
-        <div className={`absolute top-[70px] w-full bg-[#313131] h-48 rounded-xl ${isClicked ? 'scale-100' : 'scale-0'} transition-transform duration-100 flex flex-col justify-evenly origin-top items-center`}>
+        <div className={`absolute top-[70px] w-full bg-[var(--background-secondary)] h-48 rounded-xl ${isClicked ? 'scale-100' : 'scale-0'} transition-transform duration-100 flex flex-col justify-evenly origin-top items-center`}>
             <Link className="w-full flex justify-center" href={`/users/${data.userId}`}><TopBarButton>{strings.profile}</TopBarButton></Link>
             <Link className="w-full flex justify-center" href={'/settings'}><TopBarButton>{strings.settings}</TopBarButton></Link>
             <button className="w-full" onClick={async () => {await logout(); renderFunction(); router.push('/');}}><TopBarButton>{strings.logout}</TopBarButton></button>

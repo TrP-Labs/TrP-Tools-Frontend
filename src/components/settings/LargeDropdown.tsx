@@ -34,17 +34,17 @@ export default function LargeDropdown({ currentSelection, selection, effect } : 
     <div className="relative inline-block text-left" ref={menuRef}>
       <button
         onClick={() => setOpen((prev) => !prev)}
-        className="px-4 py-2 bg-[#393939] text-white rounded-sm hover:brightness-110 transition flex cursor-pointer"
+        className="px-4 py-2 bg-[var(--foreground)] text-[var(--text)] rounded-sm hover:brightness-110 transition flex cursor-pointer"
       >
         {selection[selected].display}
         {open ? <IconCaretUpFilled stroke={0.5} /> : <IconCaretDownFilled stroke={0.5} />}
       </button>
 
       {open && (
-        <div className="absolute left-0 mt-2 w-48 bg-[#393939] text-white rounded-sm shadow-lg z-10">
+        <div className="absolute left-0 mt-2 w-48 bg-[var(--background-muted)] text-[var(--text)] rounded-sm shadow-lg z-10">
           {Object.entries(selection).map(([key, { id, display }]) => {
              return <button 
-             className={`block w-full text-left px-4 py-2 hover:bg-[#4d4d4d] rounded-sm ${selected === id ? 'bg-[#4d4d4d]' : 'cursor-pointer bg-none'}`} 
+             className={`block w-full text-left px-4 py-2 hover:bg-[var(--foreground)] rounded-sm ${selected === id ? 'bg-[var(--background-secondary-muted)]' : 'cursor-pointer bg-none'}`} 
              key={key}
              onClick={() => {setSelected(id); setOpen(false)}}
              >{display}</button>
