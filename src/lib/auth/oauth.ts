@@ -1,7 +1,8 @@
 import { Roblox } from "arctic";
+import { config } from "@/lib/config";
 
 export const roblox = new Roblox(
-	process.env.ROBLOX_CLIENT_ID,
-	process.env.ROBLOX_CLIENT_SECRET,
-	'http://localhost:3000/login/callback'
+	config.robloxClientId,
+	config.robloxClientSecret,
+	config.oauthCallbackUrl
 );

@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { cache } from "react";
 import { encodeBase32LowerCaseNoPadding, encodeHexLowerCase } from "@oslojs/encoding";
 import { sha256 } from "@oslojs/crypto/sha2";
+import { config } from "@/lib/config";
 
 export function generateSessionToken(): string {
     const bytes = new Uint8Array(20);
@@ -79,7 +80,7 @@ export async function setSessionTokenCookie(token: string, expiresAt: Date): Pro
     cookieStore.set("session", token, {
         httpOnly: true,
         sameSite: "lax",
-        secure: process.env.NODE_ENV === "production",
+        secure: config.nodeEnv === "production",
         expires: expiresAt,
         path: "/"
     });
@@ -90,7 +91,7 @@ export async function deleteSessionTokenCookie(): Promise<void> {
     cookieStore.set("session", "", {
         httpOnly: true,
         sameSite: "lax",
-        secure: process.env.NODE_ENV === "production",
+        secure: config.nodeEnv === "production",
         maxAge: 0,
         path: "/"
     });

@@ -3,20 +3,40 @@ import LargeDropdown from "./LargeDropdown"
 import Cookies from 'js-cookie'
 import { useRouter } from 'next/navigation';
 
-import { Locale } from "../../../i18n-config";
-
 type displaysettings = {
     [key: string]: { id: string; display: string };
-  };
+};
 
-const LanguageSettings : displaysettings = {
-    'browser' : {'id' : 'browser', 'display' : "Auto"},
-    'en' : {'id' : 'en', 'display' : 'English'},
-    'ru' : {'id' : 'ru', 'display' : 'Русский'}
-}
+type SettingsStrings = {
+    categories: {
+        appearance: string;
+        account: string;
+        language: string;
+        theme: string;
+    };
+    themes: {
+        light: string;
+        vanilla: string;
+        dim: string;
+        midnight: string;
+        mint: string;
+        arctic: string;
+    };
+    languages: {
+        auto: string;
+        english: string;
+        russian: string;
+    };
+};
 
-const LanguageDropdown = ({currentSelection} : {currentSelection : string}) => {
+const LanguageDropdown = ({currentSelection, strings} : {currentSelection : string, strings: SettingsStrings}) => {
     const router = useRouter()
+
+    const LanguageSettings : displaysettings = {
+        'browser' : {'id' : 'browser', 'display' : strings.languages.auto},
+        'en' : {'id' : 'en', 'display' : strings.languages.english},
+        'ru' : {'id' : 'ru', 'display' : strings.languages.russian}
+    }
 
     const ChangeLanguage = (result : string) => {
         Cookies.set('preferredLanguage', result)

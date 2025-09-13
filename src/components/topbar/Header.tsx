@@ -1,12 +1,13 @@
 import Link from "next/link"
-import LoggedInUserContainer from "./Login"
 import { getCurrentSession } from "@/lib/auth/session"
 import HeaderSection from "./HeaderSection";
 import { Locale } from "@/../i18n-config";
 import { getStrings } from "@/app/strings";
+import UserMenu from "./UserMenu";
+import { IconBrowserShare } from "@tabler/icons-react";
 
 export default async function Header({ params } : {params: { lang: Locale }}) {
-    const { lang } = params;
+    const { lang } = await params;
     const strings = await getStrings(lang);
 
     const { user } = await getCurrentSession();
@@ -26,10 +27,10 @@ export default async function Header({ params } : {params: { lang: Locale }}) {
             <HeaderSection href="/shifts">{strings.topbar.shifts}</HeaderSection>
             <HeaderSection href="/tools">{strings.topbar.tools}</HeaderSection>
             <HeaderSection href="/dashboard">{strings.topbar.dashboard}</HeaderSection>
-            <HeaderSection href="https://trolleybus.wiki">{strings.topbar.wiki}</HeaderSection>
+            <HeaderSection href="https://trolleybus.wiki">{strings.topbar.wiki} <IconBrowserShare size={15} className="ml-2" /></HeaderSection>
         </div>
         <div className="flex flew-row items-center ml-auto mr-3">
-            <LoggedInUserContainer robloxId={robloxId} strings={strings.loginMenu} />
+            <UserMenu robloxId={robloxId} strings={strings.loginMenu} lang={lang} />
         </div>
     </div>
 }

@@ -1,17 +1,15 @@
 "use client"
 import { IconCaretUpFilled, IconCaretDownFilled } from '@tabler/icons-react';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 
 type displaysettings = {
   [key: string]: { id: string; display: string };
 };
 
-export default function LargeDropdown({ currentSelection, selection, effect } : {currentSelection : string, selection: displaysettings, effect : Function}) {
+export default function LargeDropdown({ currentSelection, selection, effect } : {currentSelection : string, selection: displaysettings, effect : (value: string) => void}) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState(currentSelection)
   const menuRef = useRef<HTMLDivElement>(null);
-
-  let lastCheckedSelected = currentSelection
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -24,11 +22,17 @@ export default function LargeDropdown({ currentSelection, selection, effect } : 
   }, []);
 
   useEffect(() => {
-    if (selected !== lastCheckedSelected) {
-      lastCheckedSelected = selected
+    if (selected !== currentSelection) {
       effect(selected)
     }
-  })
+  }, [selected, currentSelection, effect])
+
+
+
+  const handleSelection = useCallback((id: string) => {
+    setSelected(id);
+    setOpen(false);
+  }, []);
 
   return (
     <div className="relative inline-block text-left" ref={menuRef}>
@@ -36,7 +40,7 @@ export default function LargeDropdown({ currentSelection, selection, effect } : 
         onClick={() => setOpen((prev) => !prev)}
         className="px-4 py-2 bg-[var(--foreground)] text-[var(--text)] rounded-sm hover:brightness-110 transition flex cursor-pointer"
       >
-        {selection[selected].display}
+        {selection[selected]?.display || 'Select an option'}
         {open ? <IconCaretUpFilled stroke={0.5} /> : <IconCaretDownFilled stroke={0.5} />}
       </button>
 
@@ -46,7 +50,7 @@ export default function LargeDropdown({ currentSelection, selection, effect } : 
              return <button 
              className={`block w-full text-left px-4 py-2 hover:bg-[var(--foreground)] rounded-sm ${selected === id ? 'bg-[var(--background-secondary-muted)]' : 'cursor-pointer bg-none'}`} 
              key={key}
-             onClick={() => {setSelected(id); setOpen(false)}}
+             onClick={() => handleSelection(id)}
              >{display}</button>
           })}
         </div>

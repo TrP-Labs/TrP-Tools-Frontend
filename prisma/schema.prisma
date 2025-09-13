@@ -30,3 +30,46 @@ model Session {
 
   user      User     @relation(references: [id], fields: [userId], onDelete: Cascade)
 }
+
+model RankRelation {
+  id            String @id @unique @default(uuid())
+  robloxId      String @unique
+  color         String
+  visible       Boolean
+
+  permission_level Int
+
+  max_activity Int
+  min_activity Int
+
+  group         Group @relation(fields: [groupId], references: [id])
+  groupId       String
+}
+
+model UserActivityRecord {
+  recordID String @id @unique @default(uuid())
+  activityRecordId String
+  activityRecord ActivityRecord @relation(fields: [activityRecordId], references: [id])
+  
+  firstSeen DateTime
+  lastSeen DateTime 
+}
+
+model ActivityRecord {
+  id            String @id @unique @default(uuid())
+  group         Group @relation(fields: [groupId], references: [id])
+  groupId       String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  users UserActivityRecord[]
+}
+
+model Group {
+  id            String @id @unique @default(uuid())
+  robloxId      String
+  createdAt     DateTime @default(now())
+
+  ranks         RankRelation[]
+  activityRecords ActivityRecord[]
+}
