@@ -3,7 +3,7 @@ import React from 'react';
 
 const DashboardLoading = () => (
   <div className="flex min-h-screen items-center justify-center">
-    <Loading title='Loading menu...'/>
+    <Loading title='Loading menu...' />
   </div>
 );
 

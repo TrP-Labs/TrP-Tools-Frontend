@@ -19,7 +19,7 @@ export default async function GroupOverviewPage({ params }: { params: { groupid:
 
   return (
     <div className="flex flex-col items-center justify-center">
-      <PageBox className="w-full max-w-2xl bg-[var(--background-secondary)]">
+      <PageBox className="w-full max-w-2xl bg-[var(--background-secondary)] mt-8">
         <div className="flex items-center mb-6">
           <img src={iconUrl} alt={robloxInfo.name} className="w-24 h-24 rounded mr-6 border border-border" />
           <div>
