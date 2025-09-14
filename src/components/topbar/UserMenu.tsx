@@ -69,13 +69,13 @@ const MoreButton = ({ strings, lang }: { strings: MenuStrings; lang: string }) =
     <div className="relative" ref={menuRef}>
       <button 
         onClick={handleMenuClick}
-        className="cursor-pointer hover:bg-[#313131] p-4 transition-colors rounded-xl text-xl"
+        className="cursor-pointer hover:bg-[#313131] p-4 transition-colors rounded-xl text-xl mr-3"
       >
         {strings.more}
       </button>
 
       {isOpen && (
-        <div className="absolute top-[70px] right-0 w-48 bg-[var(--background-secondary)] rounded-xl shadow-lg z-50 border border-[var(--background-muted)]">
+        <div className="absolute top-[70px] right-0 w-48 bg-[var(--background-secondary)] rounded-xl shadow-lg z-50 border border-[var(--background-muted)] mr-3">
           <div className="p-3 space-y-2">
             <Link 
               href={`/${lang}/settings`} 
@@ -186,7 +186,7 @@ const LoggedInUser = ({
   return (
     <div className="relative" ref={menuRef}>
       <div 
-        className={`flex flex-row cursor-pointer hover:bg-[var(--foreground)] active:bg-[var(--background-secondary-muted)] ${
+        className={`flex flex-row cursor-pointer hover:bg-[var(--foreground)] active:bg-[var(--background-secondary-muted)] mr-3 ${
           isOpen ? "bg-[var(--background-secondary)]" : ""
         } p-1 transition-colors rounded-xl`}
         onClick={handleMenuClick}
@@ -205,7 +205,7 @@ const LoggedInUser = ({
       </div>
 
       {isOpen && (
-        <div className="absolute top-[70px] right-0 w-48 bg-[var(--background-secondary)] rounded-xl shadow-lg z-50 border border-[var(--background-muted)]">
+        <div className="absolute top-[70px] right-0 w-48 bg-[var(--background-secondary)] rounded-xl shadow-lg z-50 border border-[var(--background-muted)] mr-3">
           <div className="p-3 space-y-2">
             <Link 
               href={`/users/${data.userId}`} 

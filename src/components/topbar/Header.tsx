@@ -29,7 +29,7 @@ export default async function Header({ params } : {params: { lang: Locale }}) {
             <HeaderSection href="/dashboard">{strings.topbar.dashboard}</HeaderSection>
             <HeaderSection href="https://trolleybus.wiki">{strings.topbar.wiki} <IconBrowserShare size={15} className="ml-2" /></HeaderSection>
         </div>
-        <div className="flex flew-row items-center ml-auto mr-3">
+        <div className="flex flew-row items-center ml-auto">
             <UserMenu robloxId={robloxId} strings={strings.loginMenu} lang={lang} />
         </div>
     </div>
