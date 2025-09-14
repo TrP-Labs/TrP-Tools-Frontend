@@ -12,7 +12,7 @@
     "@formatjs/intl-localematcher": "^0.6.1",
     "@oslojs/crypto": "^1.0.1",
     "@oslojs/encoding": "^1.1.0",
-    "@prisma/client": "^6.7.0",
+    "@prisma/client": "^6.16.1",
     "@tabler/icons-react": "^3.34.0",
     "arctic": "^3.6.0",
     "js-cookie": "^3.0.5",
@@ -28,7 +28,7 @@
     "@types/node": "^20.17.32",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "prisma": "^6.7.0",
+    "prisma": "^6.16.1",
     "tailwindcss": "^4",
     "tsx": "^4.19.4",
     "typescript": "^5.8.3"

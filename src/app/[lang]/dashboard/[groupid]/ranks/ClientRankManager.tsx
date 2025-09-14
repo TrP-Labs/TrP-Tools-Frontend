@@ -39,9 +39,7 @@ const ClientRankManager: React.FC<ClientRankManagerProps> = ({ ranks, relations:
     // Optimistic update
     setRelations(relations => relations.map(r => r.id === relationId ? {
       ...r,
-      permission_manage: level >= 3,
-      permission_host: level >= 2,
-      permission_dispatch: level >= 1,
+      permission_level: level
     } : r));
     try {
       const res = await fetch(API_BASE, {
@@ -49,9 +47,7 @@ const ClientRankManager: React.FC<ClientRankManagerProps> = ({ ranks, relations:
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id: relationId,
-          permission_manage: level >= 3,
-          permission_host: level >= 2,
-          permission_dispatch: level >= 1,
+          permission_level: level
         }),
       });
       if (!res.ok) throw new Error("Failed to update permissions");
@@ -131,12 +127,7 @@ const ClientRankManager: React.FC<ClientRankManagerProps> = ({ ranks, relations:
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           groupId,
-          robloxId,
-          color: "#ffffff",
-          visible: true,
-          permission_manage: false,
-          permission_host: false,
-          permission_dispatch: false
+          robloxId
         }),
       });
       console.log(res);

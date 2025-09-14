@@ -34,9 +34,7 @@ export async function POST(req: NextRequest) {
             robloxId: ownerRole.id.toString(),
             color: '#9b59b6',
             visible: true,
-            permission_manage: true,
-            permission_dispatch: true,
-            permission_host: true,
+            permission_level: 3
           },
         },
       },

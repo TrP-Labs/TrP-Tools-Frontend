@@ -27,10 +27,7 @@ export async function getUserManageableGroups() {
       const matchingGroup = groupData.find((g: RobloxGroup) => g.group.id == group.robloxId);
       return (
         matchingGroup &&
-        rankRelation.robloxId === matchingGroup.role.id.toString() &&
-        (rankRelation.permission_manage ||
-          rankRelation.permission_host ||
-          rankRelation.permission_dispatch)
+        rankRelation.robloxId === matchingGroup.role.id.toString() && rankRelation.permission_level >= 3
       );
     });
   });

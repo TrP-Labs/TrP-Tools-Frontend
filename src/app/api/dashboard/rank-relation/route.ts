@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { groupId, robloxId, color, visible, permission_manage, permission_host, permission_dispatch } = body;
+    const { groupId, robloxId} = body;
     if (!groupId || !robloxId) {
       return NextResponse.json({ error: 'Missing groupId or robloxId' }, { status: 400 });
     }
@@ -29,11 +29,9 @@ export async function POST(req: NextRequest) {
       data: {
         groupId,
         robloxId,
-        color: color || '#ffffff',
-        visible: visible ?? true,
-        permission_manage: !!permission_manage,
-        permission_host: !!permission_host,
-        permission_dispatch: !!permission_dispatch,
+        color: '#ffffff',
+        visible: false,
+        permission_level: 0
       },
     });
     return NextResponse.json(created, { status: 201 });

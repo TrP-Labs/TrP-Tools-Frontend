@@ -18,9 +18,7 @@ export interface RankRelation {
   robloxId: string;
   color: string;
   visible: boolean;
-  permission_manage: boolean;
-  permission_host: boolean;
-  permission_dispatch: boolean;
+  permission_level: number;
 }
 
 interface RankManagerProps {
@@ -65,11 +63,6 @@ const RankManager: React.FC<RankManagerProps> = ({
     return obj;
   }, [ranks, relations]);
 
-
-
-  const getPermissionLevel = (rel: RankRelation) =>
-    rel.permission_manage ? 3 : rel.permission_host ? 2 : rel.permission_dispatch ? 1 : 0;
-
   return (
     <PageBox className="max-w-3xl mx-auto">
       <h2 className="text-2xl font-bold mb-2 text-primary">Manage Group Ranks</h2>
@@ -80,7 +73,7 @@ const RankManager: React.FC<RankManagerProps> = ({
         )}
         {relations.map((rank) => {
           const rankInfo = ranks.find((r) => r.id == rank.robloxId);
-          const permLevel = getPermissionLevel(rank);
+          const permLevel = rank.permission_level
           return (
             <div
               key={rankInfo?.rank || rank.robloxId}
