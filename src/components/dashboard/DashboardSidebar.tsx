@@ -1,7 +1,7 @@
 "use client";
 import React from 'react';
 import { IconHome, IconUsers, IconSettings, IconActivity, IconCalendar, IconDashboard, IconRadio, IconRobot } from '@tabler/icons-react';
-import BaseSidebar from '../../../../components/BaseSidebar';
+import BaseSidebar from '@/components/BaseSidebar';
 import { useParams } from 'next/navigation';
 
 interface SidebarProps {

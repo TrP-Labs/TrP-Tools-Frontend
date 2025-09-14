@@ -1,5 +1,5 @@
 import { getGroupRanks, getRankRelations } from '../../../../api/dashboard/services/groupService';
-import PageBox from '../../components/PageBox';
+import PageBox from '@/components//dashboard/PageBox';
 import ClientRankManager from './ClientRankManager';
 
 export default async function GroupRanksPage({ params }: { params: { groupid: string } }) {

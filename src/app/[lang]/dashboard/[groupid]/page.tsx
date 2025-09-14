@@ -1,6 +1,6 @@
 import { getGroupById } from '../../../api/dashboard/services/groupService';
 import { getGroupInfo, getGroupIcons } from '../../../api/dashboard/services/robloxService';
-import PageBox from '../components/PageBox';
+import PageBox from '@/components//dashboard//PageBox';
 
 export default async function GroupOverviewPage({ params }: { params: { groupid: string } }) {
   const { groupid } = await params;

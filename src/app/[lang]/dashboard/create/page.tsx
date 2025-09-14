@@ -1,8 +1,8 @@
 import { getOwnedNonTrpToolsGroups } from '../../../api/dashboard/services/groupService';
-import GroupList from '../components/GroupList';
-import PageBox from '../components/PageBox';
+import GroupList from '@/components//dashboard/GroupList';
+import PageBox from '@/components//dashboard/PageBox';
 import { getGroupIcons } from '../../../api/dashboard/services/robloxService';
-import CreateGroupButton from '../components/CreateGroupButton';
+import CreateGroupButton from '@/components//dashboard/CreateGroupButton';
 
 export default async function CreateGroupPage() {
   const groups = await getOwnedNonTrpToolsGroups();

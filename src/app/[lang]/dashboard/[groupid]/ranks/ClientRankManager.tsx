@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import RankManager, { Rank, RankRelation } from '../../components/RankManager';
+import RankManager, { Rank, RankRelation } from '@/components//dashboard/RankManager';
 
 interface ClientRankManagerProps {
   ranks: Rank[];

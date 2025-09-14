@@ -1,6 +1,6 @@
 import { getUserManageableGroups } from '../../api/dashboard/services/groupService';
-import GroupList from './components/GroupList';
-import PageBox from './components/PageBox';
+import GroupList from '@/components//dashboard/GroupList';
+import PageBox from '@/components//dashboard/PageBox';
 
 export default async function DashboardPage() {
   const groups = await getUserManageableGroups();
