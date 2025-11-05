@@ -1,10 +1,9 @@
 declare global {
     namespace NodeJS {
       interface ProcessEnv {
-        ROBLOX_CLIENT_ID: string;
-        ROBLOX_CLIENT_SECRET: string;
-        NODE_ENV: 'development' | 'production';
-        DATABABASE_URL: string;
+        NEXT_PUBLIC_API_BASE_URL: string;
+        API_BASE_URL?: string;
+        NODE_ENV: 'development' | 'production' | 'test';
       }
     }
   }

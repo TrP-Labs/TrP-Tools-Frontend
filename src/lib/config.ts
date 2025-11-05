@@ -1,61 +1,46 @@
-// Environment configuration with validation
 export interface Config {
-  // Database
-  databaseUrl: string;
-  
-  // OAuth
-  robloxClientId: string;
-  robloxClientSecret: string;
-  oauthCallbackUrl: string;
-  
-  // App
+  apiBaseUrl: string;
   nodeEnv: 'development' | 'production' | 'test';
   appUrl: string;
 }
 
-function validateConfig(): Config {
-  const requiredEnvVars = {
-    DATABASE_URL: process.env.DATABASE_URL,
-    ROBLOX_CLIENT_ID: process.env.ROBLOX_CLIENT_ID,
-    ROBLOX_CLIENT_SECRET: process.env.ROBLOX_CLIENT_SECRET,
-  };
+function getNodeEnv(): Config['nodeEnv'] {
+  const env = process.env.NODE_ENV ?? 'development';
+  if (env === 'development' || env === 'production' || env === 'test') {
+    return env;
+  }
+  return 'development';
+}
 
-  // Check for missing environment variables
-  const missingVars = Object.entries(requiredEnvVars)
-    .filter(([_, value]) => !value)
-    .map(([key]) => key);
+function getAppUrl(nodeEnv: Config['nodeEnv']): string {
+  return process.env.NEXT_PUBLIC_APP_URL
+    || process.env.APP_URL
+    || (nodeEnv === 'production' ? 'https://trptools.com' : 'http://localhost:3000');
+}
 
-  if (missingVars.length > 0) {
-    throw new Error(
-      `Missing required environment variables: ${missingVars.join(', ')}`
-    );
+function getApiBaseUrl(): string {
+  const base =
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+    process.env.API_BASE_URL;
+
+  if (!base) {
+    throw new Error('NEXT_PUBLIC_API_BASE_URL (or API_BASE_URL) must be defined.');
   }
 
-  const nodeEnv = process.env.NODE_ENV as 'development' | 'production' | 'test';
-  if (!['development', 'production', 'test'].includes(nodeEnv)) {
-    throw new Error(`Invalid NODE_ENV: ${nodeEnv}`);
-  }
+  return base.endsWith('/') ? base.slice(0, -1) : base;
+}
 
-  const appUrl = process.env.APP_URL || 
-    (nodeEnv === 'production' ? 'https://trptools.com' : 'http://localhost:3000');
-
-  const oauthCallbackUrl = process.env.OAUTH_CALLBACK_URL || 
-    `${appUrl}/login/callback`;
-
+function buildConfig(): Config {
+  const nodeEnv = getNodeEnv();
   return {
-    databaseUrl: requiredEnvVars.DATABASE_URL!,
-    robloxClientId: requiredEnvVars.ROBLOX_CLIENT_ID!,
-    robloxClientSecret: requiredEnvVars.ROBLOX_CLIENT_SECRET!,
+    apiBaseUrl: getApiBaseUrl(),
     nodeEnv,
-    appUrl,
-    oauthCallbackUrl,
+    appUrl: getAppUrl(nodeEnv),
   };
 }
 
-// Export validated config
-export const config = validateConfig();
+export const config = buildConfig();
 
-// Helper functions
 export const isDevelopment = config.nodeEnv === 'development';
 export const isProduction = config.nodeEnv === 'production';
-export const isTest = config.nodeEnv === 'test'; 
+export const isTest = config.nodeEnv === 'test';

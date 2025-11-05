@@ -2,19 +2,23 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import GroupCard from './GroupCard';
+import { createGroup } from '@/lib/api/groups';
 
-const CreateGroupButton: React.FC<any> = ({ group }) => {
+interface CreatableGroup {
+  id: string;
+  name: string;
+  iconUrl: string | null;
+  robloxId: string;
+}
+
+const CreateGroupButton: React.FC<{ group: CreatableGroup }> = ({ group }) => {
   const router = useRouter();
 
-  const handleCreate = async (groupId: number) => {
+  const handleCreate = async () => {
     try {
-      const res = await fetch('/api/dashboard/create-group', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ groupId: groupId }),
-      });
-      if (res.ok) {
-        router.push(`/dashboard/${groupId}`);
+      const result = await createGroup(group.robloxId);
+      if (result?.id) {
+        router.push(`/dashboard/${result.id}`);
       } else {
         alert('Failed to create group.');
       }
@@ -24,7 +28,7 @@ const CreateGroupButton: React.FC<any> = ({ group }) => {
   };
 
   return (
-    <GroupCard key={group.id} iconUrl={group.iconUrl} name={group.name} onClick={handleCreate} />
+    <GroupCard key={group.id} iconUrl={group.iconUrl ?? 'https://static.trptools.com/icon.webp'} name={group.name} onClick={handleCreate} />
   );
 };
 

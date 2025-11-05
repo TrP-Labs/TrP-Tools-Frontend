@@ -2,6 +2,8 @@
 
 import React, { useState } from "react";
 import RankManager, { Rank, RankRelation } from '@/components//dashboard/RankManager';
+import { createGroupRankRecord, deleteGroupRankRecord, fetchGroupRankRecords, updateGroupRankRecord } from "@/lib/api/groups";
+import type { GroupRankRecord } from "@/lib/api/groups";
 
 interface ClientRankManagerProps {
   ranks: Rank[];
@@ -9,24 +11,31 @@ interface ClientRankManagerProps {
   groupId: string;
 }
 
-const API_BASE = "/api/dashboard/rank-relation";
-
 const ClientRankManager: React.FC<ClientRankManagerProps> = ({ ranks, relations: initialRelations, groupId }) => {
   const [relations, setRelations] = useState<RankRelation[]>(initialRelations);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const toRelation = (record: GroupRankRecord): RankRelation => ({
+    id: record.id,
+    robloxId: record.robloxId,
+    color: record.color,
+    visible: record.visible,
+    permission_level: record.permission_level,
+  });
+
+  const isMockRelation = (relationId: string) => relationId.includes('mock');
+  const isMockRank = (rankId: string) => rankId.includes('mock');
 
   // Helper to re-fetch relations after mutation
   const refetchRelations = async (groupId: string) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}?groupId=${encodeURIComponent(groupId)}`);
-      if (!res.ok) throw new Error("Failed to fetch relations");
-      const data = await res.json();
-      setRelations(data);
+      const records = await fetchGroupRankRecords(groupId);
+      setRelations(records.map(toRelation));
     } catch (e: any) {
-      setError(e.message || "Unknown error");
+      setError(e?.message || "Failed to fetch rank relations.");
     } finally {
       setLoading(false);
     }
@@ -34,6 +43,10 @@ const ClientRankManager: React.FC<ClientRankManagerProps> = ({ ranks, relations:
 
   // Update permissions
   const onPermissionChange = async (relationId: string, level: number) => {
+    if (isMockRelation(relationId)) {
+      setError("Placeholder data cannot be modified.");
+      return;
+    }
     setLoading(true);
     setError(null);
     // Optimistic update
@@ -42,18 +55,11 @@ const ClientRankManager: React.FC<ClientRankManagerProps> = ({ ranks, relations:
       permission_level: level
     } : r));
     try {
-      const res = await fetch(API_BASE, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: relationId,
-          permission_level: level
-        }),
-      });
-      if (!res.ok) throw new Error("Failed to update permissions");
+      const success = await updateGroupRankRecord(groupId, relationId, { permission_level: level });
+      if (!success) throw new Error("Failed to update permissions");
       await refetchRelations(groupId);
     } catch (e: any) {
-      setError(e.message || "Unknown error");
+      setError(e?.message || "Failed to update permissions.");
     } finally {
       setLoading(false);
     }
@@ -61,19 +67,19 @@ const ClientRankManager: React.FC<ClientRankManagerProps> = ({ ranks, relations:
 
   // Update color
   const onColorChange = async (relationId: string, color: string) => {
+    if (isMockRelation(relationId)) {
+      setError("Placeholder data cannot be modified.");
+      return;
+    }
     setLoading(true);
     setError(null);
     setRelations(relations => relations.map(r => r.id === relationId ? { ...r, color } : r));
     try {
-      const res = await fetch(API_BASE, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: relationId, color }),
-      });
-      if (!res.ok) throw new Error("Failed to update color");
+      const success = await updateGroupRankRecord(groupId, relationId, { color });
+      if (!success) throw new Error("Failed to update color");
       await refetchRelations(groupId);
     } catch (e: any) {
-      setError(e.message || "Unknown error");
+      setError(e?.message || "Failed to update color.");
     } finally {
       setLoading(false);
     }
@@ -81,19 +87,19 @@ const ClientRankManager: React.FC<ClientRankManagerProps> = ({ ranks, relations:
 
   // Update visible state
   const onVisibleChange = async (relationId: string, visible: boolean) => {
+    if (isMockRelation(relationId)) {
+      setError("Placeholder data cannot be modified.");
+      return;
+    }
     setLoading(true);
     setError(null);
     setRelations(relations => relations.map(r => r.id === relationId ? { ...r, visible } : r));
     try {
-      const res = await fetch(API_BASE, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: relationId, visible }),
-      });
-      if (!res.ok) throw new Error("Failed to update visibility");
+      const success = await updateGroupRankRecord(groupId, relationId, { visible });
+      if (!success) throw new Error("Failed to update visibility");
       await refetchRelations(groupId);
     } catch (e: any) {
-      setError(e.message || "Unknown error");
+      setError(e?.message || "Failed to update visibility.");
     } finally {
       setLoading(false);
     }
@@ -101,17 +107,19 @@ const ClientRankManager: React.FC<ClientRankManagerProps> = ({ ranks, relations:
 
   // Delete relation
   const onDelete = async (relationId: string) => {
+    if (isMockRelation(relationId)) {
+      setError("Placeholder data cannot be modified.");
+      return;
+    }
     setLoading(true);
     setError(null);
     setRelations(relations => relations.filter(r => r.id !== relationId));
     try {
-      const res = await fetch(`${API_BASE}?id=${encodeURIComponent(relationId)}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) throw new Error("Failed to delete relation");
+      const success = await deleteGroupRankRecord(groupId, relationId);
+      if (!success) throw new Error("Failed to delete relation");
       await refetchRelations(groupId);
     } catch (e: any) {
-      setError(e.message || "Unknown error");
+      setError(e?.message || "Failed to delete relation.");
     } finally {
       setLoading(false);
     }
@@ -119,22 +127,18 @@ const ClientRankManager: React.FC<ClientRankManagerProps> = ({ ranks, relations:
 
   // Create relation
   const onCreate = async (robloxId: string) => {
+    if (isMockRank(robloxId)) {
+      setError("Placeholder ranks cannot be created.");
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(API_BASE, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          groupId,
-          robloxId
-        }),
-      });
-      console.log(res);
-      if (!res.ok) throw new Error("Failed to create relation");
+      const record = await createGroupRankRecord(groupId, robloxId);
+      if (!record) throw new Error("Failed to create relation");
       await refetchRelations(groupId);
     } catch (e: any) {
-      setError(e.message || "Unknown error");
+      setError(e?.message || "Failed to create relation.");
     } finally {
       setLoading(false);
     }

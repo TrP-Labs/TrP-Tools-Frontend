@@ -1,16 +1,17 @@
 "use client"
 import Link from "next/link"
 import { useState, useEffect, useRef } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import TopBarButton from "./TopBarButton";
 import { ClientUserService } from "@/lib/services/clientUserService";
 
 // Types
 interface RobloxUserInfo {
-  username: string;
   displayName: string;
-  profileImage?: string;
   userId: string;
+  username: string;
+  profileImage: string | null;
+  siteRank?: string;
 }
 
 interface MenuStrings {
@@ -23,7 +24,6 @@ interface MenuStrings {
 }
 
 interface ErrorStrings {
-  failedToLoadUser: string;
   logoutFailedTryAgain: string;
 }
 
@@ -94,7 +94,7 @@ const MoreButton = ({ strings, lang }: { strings: MenuStrings; lang: string }) =
             <button 
               onClick={() => {
                 handleItemClick();
-                router.push('/login');
+                window.location.href = ClientUserService.loginUrl();
               }}
               className="w-full"
             >
@@ -126,6 +126,18 @@ const LoggedInUser = ({
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
+  const buildMockUserInfo = (id: string, siteRank?: string): RobloxUserInfo => {
+    const normalizedId = id.toString();
+    const prefix = siteRank ? `${siteRank} ` : "";
+    return {
+      userId: normalizedId,
+      displayName: `${prefix}User ${normalizedId}`,
+      username: `user${normalizedId}`,
+      profileImage: null,
+      siteRank,
+    };
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       if (!robloxId) {
@@ -135,18 +147,22 @@ const LoggedInUser = ({
 
       try {
         setError(null);
-        const userInfo = await ClientUserService.getRobloxUserInfo(robloxId);
-        setData(userInfo);
+        const session = await ClientUserService.getSession();
+        if (session.authenticated && session.user) {
+          setData(buildMockUserInfo(session.user.robloxId.toString(), session.user.siteRank));
+        } else {
+          setData(buildMockUserInfo(robloxId));
+        }
       } catch (e) {
         console.error("Failed to load user info", e);
-        setError(errorStrings.failedToLoadUser);
+        setData(buildMockUserInfo(robloxId));
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [robloxId, errorStrings.failedToLoadUser]);
+  }, [robloxId]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -245,15 +261,16 @@ const LoggedInUser = ({
 const UserMenu = ({ 
   robloxId, 
   strings,
+  errors,
   lang
 }: { 
   robloxId: string | null; 
   strings: MenuStrings;
+  errors?: Partial<Record<'logoutFailedTryAgain', string>>;
   lang: string;
 }) => {
   const errorStrings = {
-    failedToLoadUser: "Failed to load user info",
-    logoutFailedTryAgain: "Logout failed. Please try again."
+    logoutFailedTryAgain: errors?.logoutFailedTryAgain ?? "Logout failed. Please try again."
   };
 
   if (!robloxId) {

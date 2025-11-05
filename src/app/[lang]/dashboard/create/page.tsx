@@ -1,25 +1,18 @@
-import { getOwnedNonTrpToolsGroups } from '../../../api/dashboard/services/groupService';
 import PageBox from '@/components//dashboard/PageBox';
-import { getGroupIcons } from '../../../api/dashboard/services/robloxService';
 import CreateGroupButton from '@/components/dashboard/CreateGroupCard';
 import Link from 'next/link';
+import { fetchCreatableGroups, type GroupSummary } from '@/lib/api/groups';
+
+const withPlaceholders = (group: GroupSummary) => ({
+  id: group.id,
+  name: group.name || `Group ${group.robloxId}`,
+  iconUrl: group.iconUrl || 'https://static.trptools.com/icon.webp',
+  robloxId: group.robloxId,
+});
 
 export default async function CreateGroupPage() {
-  const groups = await getOwnedNonTrpToolsGroups();
-  const groupIds = groups.map((g: any) => g.group.id);
-  const icons = await getGroupIcons(groupIds);
-  console.log(groups)
-  console.log(icons)
-  const groupList = groups.map((g: any) => {
-    console.log(g)
-    const icon = icons.find((icon: any) => icon.groupId == g.group.id);
-    console.log(icon)
-    return {
-      id: g.group.id,
-      name: g.group.name,
-      iconUrl: icon?.imageUrl || 'https://static.trptools.com/icon.webp',
-    };
-  });
+  const groups = await fetchCreatableGroups();
+  const groupList = groups.map(withPlaceholders);
   return (
     <div className="flex flex-col items-center justify-center min-h-screen">
       <PageBox className="w-full max-w-3xl bg-[var(--background-secondary)]">

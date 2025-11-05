@@ -1,16 +1,17 @@
-import { getUserManageableGroups } from '../../api/dashboard/services/groupService';
 import GroupList from '@/components//dashboard/GroupList';
 import PageBox from '@/components//dashboard/PageBox';
 import Link from 'next/link';
+import { fetchGroups, type GroupSummary } from '@/lib/api/groups';
+
+const withPlaceholders = (group: GroupSummary) => ({
+  id: group.id,
+  name: group.name || `Group ${group.robloxId}`,
+  iconUrl: group.iconUrl || 'https://static.trptools.com/icon.webp',
+});
 
 export default async function DashboardPage() {
-  const groups = await getUserManageableGroups();
-  // Map to GroupList format
-  const groupList = groups.map((g: any) => ({
-    id: g.trptoolsGroup.id,
-    name: g.robloxGroup?.group?.name || 'Unknown',
-    iconUrl: g.iconId || 'https://static.trptools.com/icon.webp',
-  }));
+  const groups = await fetchGroups();
+  const groupList = groups.map(withPlaceholders);
   return (
     <div className="flex flex-col items-center justify-center min-h-screen">
       <PageBox className="w-full max-w-4xl bg-[var(--background-secondary)]">
