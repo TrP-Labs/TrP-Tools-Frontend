@@ -12,6 +12,10 @@ export default function LargeDropdown({ currentSelection, selection, effect } : 
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    setSelected(currentSelection);
+  }, [currentSelection]);
+
+  useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setOpen(false);
@@ -21,11 +25,14 @@ export default function LargeDropdown({ currentSelection, selection, effect } : 
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  const previousSelectionRef = useRef(currentSelection);
+
   useEffect(() => {
-    if (selected !== currentSelection) {
+    if (selected !== previousSelectionRef.current) {
+      previousSelectionRef.current = selected;
       effect(selected)
     }
-  }, [selected, currentSelection, effect])
+  }, [selected, effect]);
 
 
 
@@ -37,6 +44,7 @@ export default function LargeDropdown({ currentSelection, selection, effect } : 
   return (
     <div className="relative inline-block text-left" ref={menuRef}>
       <button
+        type="button"
         onClick={() => setOpen((prev) => !prev)}
         className="px-4 py-2 bg-[var(--foreground)] text-[var(--text)] rounded-sm hover:brightness-110 transition flex cursor-pointer"
       >
@@ -46,13 +54,16 @@ export default function LargeDropdown({ currentSelection, selection, effect } : 
 
       {open && (
         <div className="absolute left-0 mt-2 w-48 bg-[var(--background-muted)] text-[var(--text)] rounded-sm shadow-lg z-10">
-          {Object.entries(selection).map(([key, { id, display }]) => {
-             return <button 
-             className={`block w-full text-left px-4 py-2 hover:bg-[var(--foreground)] rounded-sm ${selected === id ? 'bg-[var(--background-secondary-muted)]' : 'cursor-pointer bg-none'}`} 
-             key={key}
-             onClick={() => handleSelection(id)}
-             >{display}</button>
-          })}
+          {Object.entries(selection).map(([key, { id, display }]) => (
+            <button
+              type="button"
+              className={`block w-full text-left px-4 py-2 hover:bg-[var(--foreground)] rounded-sm ${selected === id ? 'bg-[var(--background-secondary-muted)]' : 'cursor-pointer bg-none'}`}
+              key={key}
+              onClick={() => handleSelection(id)}
+            >
+              {display}
+            </button>
+          ))}
         </div>
       )}
     </div>
