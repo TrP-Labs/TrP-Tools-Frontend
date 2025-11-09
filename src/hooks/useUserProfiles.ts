@@ -33,7 +33,12 @@ export function useUserProfiles(ids: Array<string | null | undefined>): UseUserP
   const key = React.useMemo(() => normalizedIds.join("|"), [normalizedIds]);
   const [version, setVersion] = React.useState(0);
   const [loading, setLoading] = React.useState(() => normalizedIds.length > 0);
+  const [hydrated, setHydrated] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    setHydrated(true);
+  }, []);
 
   React.useEffect(() => {
     if (normalizedIds.length === 0) {
@@ -74,6 +79,9 @@ export function useUserProfiles(ids: Array<string | null | undefined>): UseUserP
   }, [key]);
 
   const profiles = React.useMemo(() => {
+    if (!hydrated) {
+      return {};
+    }
     const snapshot: Record<string, UserProfileSummary> = {};
     normalizedIds.forEach((id) => {
       const cached = getCachedUserProfile(id);
@@ -82,7 +90,7 @@ export function useUserProfiles(ids: Array<string | null | undefined>): UseUserP
       }
     });
     return snapshot;
-  }, [key, version]);
+  }, [hydrated, key, version]);
 
   return { profiles, loading, error };
 }
