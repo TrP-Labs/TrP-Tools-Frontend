@@ -1,18 +1,20 @@
 "use client";
 
 import React, { useState } from "react";
-import RankManager, { Rank, RankRelation } from '@/components//dashboard/RankManager';
-import { createGroupRankRecord, deleteGroupRankRecord, fetchGroupRankRecords, updateGroupRankRecord } from "@/lib/api/groups";
-import type { GroupRankRecord } from "@/lib/api/groups";
+import RankManager, { Rank, RankRelation } from '@/components/dashboard/RankManager';
+import { createGroupRankRecord, deleteGroupRankRecord, fetchCreatableGroupRanks, fetchGroupRankRecords, updateGroupRankRecord } from "@/lib/api/groups";
+import type { GroupRankRecord, CreatableGroupRank } from "@/lib/api/groups";
 
 interface ClientRankManagerProps {
   ranks: Rank[];
   relations: RankRelation[];
+  creatableRanks: CreatableGroupRank[];
   groupId: string;
 }
 
-const ClientRankManager: React.FC<ClientRankManagerProps> = ({ ranks, relations: initialRelations, groupId }) => {
+const ClientRankManager: React.FC<ClientRankManagerProps> = ({ ranks, relations: initialRelations, creatableRanks: initialCreatableRanks, groupId }) => {
   const [relations, setRelations] = useState<RankRelation[]>(initialRelations);
+  const [creatableRanks, setCreatableRanks] = useState<CreatableGroupRank[]>(initialCreatableRanks);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,22 +26,47 @@ const ClientRankManager: React.FC<ClientRankManagerProps> = ({ ranks, relations:
     permission_level: record.permission_level,
   });
 
+  const buildFallbackCreatableRanks = (records: GroupRankRecord[]): CreatableGroupRank[] =>
+    records.map((record) => ({
+      robloxId: record.robloxId,
+      name: record.cached_name,
+      order: record.cached_rank,
+    }));
+
   const isMockRelation = (relationId: string) => relationId.includes('mock');
   const isMockRank = (rankId: string) => rankId.includes('mock');
 
-  // Helper to re-fetch relations after mutation
-  const refetchRelations = async (groupId: string) => {
+  // Helper to re-fetch relations and available ranks after mutation
+  const refetchGroupData = async (groupId: string) => {
     setLoading(true);
     setError(null);
     try {
-      const records = await fetchGroupRankRecords(groupId);
+      const [records, available] = await Promise.all([
+        fetchGroupRankRecords(groupId),
+        fetchCreatableGroupRanks(groupId),
+      ]);
       setRelations(records.map(toRelation));
+      const fallbackOptions = buildFallbackCreatableRanks(records);
+      setCreatableRanks((prev) => {
+        if (available.length) return available;
+        if (fallbackOptions.length) return fallbackOptions;
+        return prev;
+      });
     } catch (e: any) {
-      setError(e?.message || "Failed to fetch rank relations.");
+      setError(e?.message || "Failed to fetch rank data.");
     } finally {
       setLoading(false);
     }
   };
+
+  const lastFetchedGroup = React.useRef<string | null>(null);
+
+  React.useEffect(() => {
+    if (lastFetchedGroup.current === groupId) return;
+    lastFetchedGroup.current = groupId;
+    refetchGroupData(groupId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groupId]);
 
   // Update permissions
   const onPermissionChange = async (relationId: string, level: number) => {
@@ -55,9 +82,9 @@ const ClientRankManager: React.FC<ClientRankManagerProps> = ({ ranks, relations:
       permission_level: level
     } : r));
     try {
-      const success = await updateGroupRankRecord(groupId, relationId, { permission_level: level });
+      const success = await updateGroupRankRecord(relationId, { permission_level: level });
       if (!success) throw new Error("Failed to update permissions");
-      await refetchRelations(groupId);
+      await refetchGroupData(groupId);
     } catch (e: any) {
       setError(e?.message || "Failed to update permissions.");
     } finally {
@@ -75,9 +102,9 @@ const ClientRankManager: React.FC<ClientRankManagerProps> = ({ ranks, relations:
     setError(null);
     setRelations(relations => relations.map(r => r.id === relationId ? { ...r, color } : r));
     try {
-      const success = await updateGroupRankRecord(groupId, relationId, { color });
+      const success = await updateGroupRankRecord(relationId, { color });
       if (!success) throw new Error("Failed to update color");
-      await refetchRelations(groupId);
+      await refetchGroupData(groupId);
     } catch (e: any) {
       setError(e?.message || "Failed to update color.");
     } finally {
@@ -95,9 +122,9 @@ const ClientRankManager: React.FC<ClientRankManagerProps> = ({ ranks, relations:
     setError(null);
     setRelations(relations => relations.map(r => r.id === relationId ? { ...r, visible } : r));
     try {
-      const success = await updateGroupRankRecord(groupId, relationId, { visible });
+      const success = await updateGroupRankRecord(relationId, { visible });
       if (!success) throw new Error("Failed to update visibility");
-      await refetchRelations(groupId);
+      await refetchGroupData(groupId);
     } catch (e: any) {
       setError(e?.message || "Failed to update visibility.");
     } finally {
@@ -115,9 +142,9 @@ const ClientRankManager: React.FC<ClientRankManagerProps> = ({ ranks, relations:
     setError(null);
     setRelations(relations => relations.filter(r => r.id !== relationId));
     try {
-      const success = await deleteGroupRankRecord(groupId, relationId);
+      const success = await deleteGroupRankRecord(relationId);
       if (!success) throw new Error("Failed to delete relation");
-      await refetchRelations(groupId);
+      await refetchGroupData(groupId);
     } catch (e: any) {
       setError(e?.message || "Failed to delete relation.");
     } finally {
@@ -136,7 +163,7 @@ const ClientRankManager: React.FC<ClientRankManagerProps> = ({ ranks, relations:
     try {
       const record = await createGroupRankRecord(groupId, robloxId);
       if (!record) throw new Error("Failed to create relation");
-      await refetchRelations(groupId);
+      await refetchGroupData(groupId);
     } catch (e: any) {
       setError(e?.message || "Failed to create relation.");
     } finally {
@@ -150,6 +177,7 @@ const ClientRankManager: React.FC<ClientRankManagerProps> = ({ ranks, relations:
       <RankManager
         ranks={ranks}
         relations={relations}
+        creatableRanks={creatableRanks}
         onPermissionChange={onPermissionChange}
         onColorChange={onColorChange}
         onVisibleChange={onVisibleChange}

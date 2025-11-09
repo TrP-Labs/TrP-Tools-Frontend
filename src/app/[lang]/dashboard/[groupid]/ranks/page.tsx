@@ -1,7 +1,7 @@
 import ClientRankManager from './ClientRankManager';
-import { fetchGroupRankRecords } from '@/lib/api/groups';
-import type { GroupRankRecord } from '@/lib/api/groups';
-import type { Rank, RankRelation } from '@/components//dashboard/RankManager';
+import { fetchCreatableGroupRanks, fetchGroupRankRecords } from '@/lib/api/groups';
+import type { GroupRankRecord, CreatableGroupRank } from '@/lib/api/groups';
+import type { Rank, RankRelation } from '@/components/dashboard/RankManager';
 
 const buildMockRanks = (groupId: string): Rank[] => ([
   { id: `${groupId}-mock-1`, name: `Rank A (${groupId})`, memberCount: null, rank: 1 },
@@ -29,16 +29,12 @@ const toRelation = (record: GroupRankRecord): RankRelation => ({
 
 export default async function GroupRanksPage({ params }: { params: { groupid: string } }) {
   const { groupid } = await params;
-  const records = await fetchGroupRankRecords(groupid);
+  const [records, creatableRankOptions] = await Promise.all([
+    fetchGroupRankRecords(groupid),
+    fetchCreatableGroupRanks(groupid),
+  ]);
 
-  const rankMap = new Map<string, Rank>();
-  records.forEach((record) => {
-    if (!rankMap.has(record.robloxId)) {
-      rankMap.set(record.robloxId, toRank(record));
-    }
-  });
-
-  let ranks = Array.from(rankMap.values());
+  let ranks = records.map(toRank);
   if (ranks.length === 0) {
     ranks = buildMockRanks(groupid);
   }
@@ -48,9 +44,18 @@ export default async function GroupRanksPage({ params }: { params: { groupid: st
     relations = buildMockRelations(groupid);
   }
 
+  let creatableRanks: CreatableGroupRank[] = creatableRankOptions;
+  if (creatableRanks.length === 0) {
+    creatableRanks = ranks.map((rank) => ({
+      robloxId: rank.id,
+      name: rank.name,
+      order: rank.rank,
+    }));
+  }
+
   return (
     <div className="flex flex-col items-center justify-center">
-        <ClientRankManager ranks={ranks} relations={relations} groupId={groupid} />
+        <ClientRankManager ranks={ranks} relations={relations} creatableRanks={creatableRanks} groupId={groupid} />
     </div>
   );
 } 

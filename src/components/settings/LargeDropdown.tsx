@@ -3,7 +3,7 @@ import { IconCaretUpFilled, IconCaretDownFilled } from '@tabler/icons-react';
 import { useState, useRef, useEffect, useCallback } from 'react';
 
 type displaysettings = {
-  [key: string]: { id: string; display: string };
+  [key: string]: { id: string; display: string; order?: number };
 };
 
 export default function LargeDropdown({ currentSelection, selection, effect } : {currentSelection : string, selection: displaysettings, effect : (value: string) => void}) {
@@ -41,6 +41,19 @@ export default function LargeDropdown({ currentSelection, selection, effect } : 
     setOpen(false);
   }, []);
 
+  const entries = Object.entries(selection);
+  const hasOrdering = entries.some(([, value]) => typeof value.order === "number");
+  const orderedEntries = hasOrdering
+    ? [...entries].sort(([, a], [, b]) => {
+        const orderA = typeof a.order === "number" ? a.order : Number.POSITIVE_INFINITY;
+        const orderB = typeof b.order === "number" ? b.order : Number.POSITIVE_INFINITY;
+        if (orderA === orderB) {
+          return 0;
+        }
+        return orderA - orderB;
+      })
+    : entries;
+
   return (
     <div className="relative inline-block text-left" ref={menuRef}>
       <button
@@ -54,7 +67,7 @@ export default function LargeDropdown({ currentSelection, selection, effect } : 
 
       {open && (
         <div className="absolute left-0 mt-2 w-48 bg-[var(--background-muted)] text-[var(--text)] rounded-sm shadow-lg z-10">
-          {Object.entries(selection).map(([key, { id, display }]) => (
+          {orderedEntries.map(([key, { id, display }]) => (
             <button
               type="button"
               className={`block w-full text-left px-4 py-2 hover:bg-[var(--foreground)] rounded-sm ${selected === id ? 'bg-[var(--background-secondary-muted)]' : 'cursor-pointer bg-none'}`}

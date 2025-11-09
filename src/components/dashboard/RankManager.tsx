@@ -1,15 +1,15 @@
 "use client";
 import React from 'react';
 import PageBox from './PageBox';
-import LoadingSpinner from '@/components/LoadingSpinner';
 import LargeDropdown from '@/components/settings/LargeDropdown';
 import PermissionsSelector from './PermissionSelector';
+import type { CreatableGroupRank } from '@/lib/api/groups';
 
 // Define types for rank and relation
 export interface Rank {
   id: string;
   name: string;
-  memberCount?: number;
+  memberCount?: number | null;
   rank: number;
 }
 
@@ -24,6 +24,7 @@ export interface RankRelation {
 interface RankManagerProps {
   ranks: Rank[];
   relations: RankRelation[];
+  creatableRanks: CreatableGroupRank[];
   onPermissionChange: (relationId: string, level: number) => void;
   onColorChange: (relationId: string, color: string) => void;
   onVisibleChange: (relationId: string, visible: boolean) => void;
@@ -31,16 +32,10 @@ interface RankManagerProps {
   onCreate: (robloxId: string) => void;
 }
 
-const PERMISSION_LEVELS = [
-  { label: 'None', value: 0 },
-  { label: 'Dispatch', value: 1 },
-  { label: 'Host + Dispatch', value: 2 },
-  { label: 'Manage + Host + Dispatch', value: 3 },
-];
-
 const RankManager: React.FC<RankManagerProps> = ({
   ranks,
   relations,
+  creatableRanks,
   onPermissionChange,
   onColorChange,
   onVisibleChange,
@@ -48,20 +43,45 @@ const RankManager: React.FC<RankManagerProps> = ({
   onCreate,
 }) => {
   const [selectedRank, setSelectedRank] = React.useState('');
+  const [isHydrated, setIsHydrated] = React.useState(false);
 
-  // Prepare dropdown options for LargeDropdown - filter out ranks that are already in relations
-  const dropdownOptions = React.useMemo(() => {
-    const obj: { [key: string]: { id: string; display: string; rank: number } } = {};
-    const existingRankIds = relations.map(rel => rel.robloxId);
-    
-    ranks.forEach((r) => {
-      // Only add ranks that are not already in relations
-      if (!existingRankIds.includes(r.id)) {
-        obj[r.id] = { id: r.id, display: r.name, rank: r.rank };
+  // Prepare dropdown options for LargeDropdown - API already scopes creatable ranks
+  const { dropdownOptions, orderedOptionIds } = React.useMemo(() => {
+    const obj: Record<string, { id: string; display: string; order?: number }> = {};
+    const orderedIds: string[] = [];
+
+    creatableRanks
+      .slice()
+      .sort((a, b) => a.order - b.order)
+      .forEach((option) => {
+        obj[option.robloxId] = { id: option.robloxId, display: option.name, order: option.order };
+        orderedIds.push(option.robloxId);
+      });
+
+    return { dropdownOptions: obj, orderedOptionIds: orderedIds };
+  }, [creatableRanks, ranks]);
+
+  const optionCount = orderedOptionIds.length;
+  const canShowDropdown = isHydrated && optionCount > 0;
+
+  React.useEffect(() => {
+    setIsHydrated(true);
+  }, []);
+
+  React.useEffect(() => {
+    if (!canShowDropdown) {
+      if (selectedRank !== "") {
+        setSelectedRank("");
       }
-    });
-    return obj;
-  }, [ranks, relations]);
+      return;
+    }
+    const next = orderedOptionIds[0] ?? "";
+    if (!selectedRank || !dropdownOptions[selectedRank]) {
+      if (next !== selectedRank) {
+        setSelectedRank(next);
+      }
+    }
+  }, [canShowDropdown, dropdownOptions, orderedOptionIds, selectedRank]);
 
   return (
     <PageBox className="max-w-3xl mx-auto">
@@ -121,14 +141,15 @@ const RankManager: React.FC<RankManagerProps> = ({
       </div>
       <hr className="my-8 border-border" />
       <h2 className="text-2xl font-bold mb-2 text-primary">Select a rank to add</h2>
-      {Object.keys(dropdownOptions).length === 0 ? (
+      {!canShowDropdown && (
         <div className="text-center text-gray-500 py-4">
           All available ranks have already been added to this group.
         </div>
-      ) : (
+      )}
+      {canShowDropdown && (
         <div className="flex flex-col sm:flex-row items-center gap-4">
           <LargeDropdown
-            currentSelection={selectedRank || Object.keys(dropdownOptions)[0] || ''}
+            currentSelection={selectedRank}
             selection={dropdownOptions}
             effect={setSelectedRank}
           />
