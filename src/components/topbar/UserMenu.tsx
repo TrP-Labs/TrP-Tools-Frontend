@@ -1,18 +1,12 @@
-"use client"
-import Link from "next/link"
+"use client";
+import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import TopBarButton from "./TopBarButton";
 import { ClientUserService } from "@/lib/services/clientUserService";
-
-// Types
-interface RobloxUserInfo {
-  displayName: string;
-  userId: string;
-  username: string;
-  profileImage: string | null;
-  siteRank?: string;
-}
+import { useUserProfiles } from "@/hooks/useUserProfiles";
+import UserIdentityRow from "@/components/users/UserIdentityRow";
+import type { ApiSessionUser } from "@/lib/types/user";
 
 interface MenuStrings {
   profile: string;
@@ -27,24 +21,20 @@ interface ErrorStrings {
   logoutFailedTryAgain: string;
 }
 
-// Loading skeleton component
-const LoggedInSkeleton = () => {
-  return (
-    <>
-      <div className="rounded-full w-12 h-12 mr-2 bg-gray-600 animate-pulse" />
-      <div className="flex flex-col">
-        <div className="rounded-full w-32 h-5 bg-gray-600 animate-pulse" />
-        <div className="rounded-full w-24 h-3 mt-1 bg-gray-600 animate-pulse" />
-      </div>
-    </>
-  );
+const buildFallbackProfile = (user: ApiSessionUser) => {
+  const displayName = user.siteRank ? `${user.siteRank} ${user.robloxId}` : `User ${user.robloxId}`;
+  return {
+    userId: user.userId,
+    displayName,
+    username: user.robloxId,
+    profileImage: null,
+  };
 };
 
 // More button component for logged out users
 const MoreButton = ({ strings, lang }: { strings: MenuStrings; lang: string }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -108,61 +98,25 @@ const MoreButton = ({ strings, lang }: { strings: MenuStrings; lang: string }) =
 };
 
 // Logged in user component with proper error handling
-const LoggedInUser = ({ 
-  robloxId, 
+const LoggedInUser = ({
+  sessionUser,
   strings,
   errorStrings,
-  lang
-}: { 
-  robloxId: string; 
+  lang,
+}: {
+  sessionUser: ApiSessionUser;
   strings: MenuStrings;
   errorStrings: ErrorStrings;
   lang: string;
 }) => {
-  const [data, setData] = useState<RobloxUserInfo | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-
-  const buildMockUserInfo = (id: string, siteRank?: string): RobloxUserInfo => {
-    const normalizedId = id.toString();
-    const prefix = siteRank ? `${siteRank} ` : "";
-    return {
-      userId: normalizedId,
-      displayName: `${prefix}User ${normalizedId}`,
-      username: `user${normalizedId}`,
-      profileImage: null,
-      siteRank,
-    };
-  };
-
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!robloxId) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setError(null);
-        const session = await ClientUserService.getSession();
-        if (session.authenticated && session.user) {
-          setData(buildMockUserInfo(session.user.robloxId.toString(), session.user.siteRank));
-        } else {
-          setData(buildMockUserInfo(robloxId));
-        }
-      } catch (e) {
-        console.error("Failed to load user info", e);
-        setData(buildMockUserInfo(robloxId));
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [robloxId]);
+  const { profiles, loading } = useUserProfiles([sessionUser.userId]);
+  const profileFromApi = profiles[sessionUser.userId];
+  const profile = profileFromApi ?? buildFallbackProfile(sessionUser);
+  const showSkeleton = !profile && loading;
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -195,10 +149,6 @@ const LoggedInUser = ({
     setIsOpen(false);
   };
 
-  if (loading) return <LoggedInSkeleton />;
-  if (error) return <MoreButton strings={strings} lang={lang} />;
-  if (!data) return <MoreButton strings={strings} lang={lang} />;
-
   return (
     <div className="relative" ref={menuRef}>
       <div 
@@ -207,24 +157,22 @@ const LoggedInUser = ({
         } p-1 transition-colors rounded-xl`}
         onClick={handleMenuClick}
       >
-        <img 
-          className="w-12 h-12 mr-2 rounded-full bg-[var(--background-muted)]" 
-          src={data.profileImage || '/icon.png'} 
-          alt={`${data.displayName}'s profile picture`} 
-          width={48} 
-          height={48} 
+        <UserIdentityRow
+          profile={profile}
+          loading={showSkeleton}
+          showUsername
+          size="md"
+          subtitle={sessionUser.siteRank}
+          className="flex-1 min-w-0"
         />
-        <div className="flex flex-col h-12 items-center">
-          <span className="w-32 h-6 mr-auto font-medium">{data.displayName}</span>
-          <span className="w-24 h-6 mr-auto text-sm font-sm text-gray-400">@{data.username}</span>
-        </div>
       </div>
+      {error && <p className="text-xs text-red-400 mt-2">{error}</p>}
 
       {isOpen && (
         <div className="absolute top-[70px] right-0 w-48 bg-[var(--background-secondary)] rounded-xl shadow-lg z-50 border border-[var(--background-muted)] mr-3">
           <div className="p-3 space-y-2">
             <Link 
-              href={`/users/${data.userId}`} 
+              href={`/users/${profile.userId}`} 
               onClick={handleItemClick}
               className="w-full flex justify-center"
             >
@@ -258,26 +206,26 @@ const LoggedInUser = ({
 };
 
 // Main container component
-const UserMenu = ({ 
-  robloxId, 
+const UserMenu = ({
+  sessionUser,
   strings,
   errors,
-  lang
-}: { 
-  robloxId: string | null; 
+  lang,
+}: {
+  sessionUser: ApiSessionUser | null;
   strings: MenuStrings;
-  errors?: Partial<Record<'logoutFailedTryAgain', string>>;
+  errors?: Partial<Record<"logoutFailedTryAgain", string>>;
   lang: string;
 }) => {
   const errorStrings = {
     logoutFailedTryAgain: errors?.logoutFailedTryAgain ?? "Logout failed. Please try again."
   };
 
-  if (!robloxId) {
+  if (!sessionUser) {
     return <MoreButton strings={strings} lang={lang} />;
   }
 
-  return <LoggedInUser robloxId={robloxId} strings={strings} errorStrings={errorStrings} lang={lang} />;
+  return <LoggedInUser sessionUser={sessionUser} strings={strings} errorStrings={errorStrings} lang={lang} />;
 };
 
 export default UserMenu; 

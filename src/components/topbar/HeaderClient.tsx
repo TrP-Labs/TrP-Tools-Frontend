@@ -6,6 +6,7 @@ import { IconBrowserShare } from "@tabler/icons-react";
 import HeaderSection from "./HeaderSection";
 import UserMenu from "./UserMenu";
 import { ClientUserService } from "@/lib/services/clientUserService";
+import type { ApiSessionUser } from "@/lib/types/user";
 
 interface HeaderClientProps {
   lang: string;
@@ -36,7 +37,7 @@ export default function HeaderClient({
   menuStrings,
   errorStrings,
 }: HeaderClientProps) {
-  const [robloxId, setRobloxId] = useState<string | null>(null);
+  const [sessionUser, setSessionUser] = useState<ApiSessionUser | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -45,13 +46,13 @@ export default function HeaderClient({
       .then((session) => {
         if (!active) return;
         if (session.authenticated && session.user) {
-          setRobloxId(session.user.robloxId.toString());
+          setSessionUser(session.user);
         } else {
-          setRobloxId(null);
+          setSessionUser(null);
         }
       })
       .catch(() => {
-        if (active) setRobloxId(null);
+        if (active) setSessionUser(null);
       });
 
     return () => {
@@ -84,7 +85,7 @@ export default function HeaderClient({
         </HeaderSection>
       </div>
       <div className="flex flew-row items-center ml-auto">
-        <UserMenu robloxId={robloxId} strings={menuStrings} errors={errorStrings} lang={lang} />
+        <UserMenu sessionUser={sessionUser} strings={menuStrings} errors={errorStrings} lang={lang} />
       </div>
     </div>
   );

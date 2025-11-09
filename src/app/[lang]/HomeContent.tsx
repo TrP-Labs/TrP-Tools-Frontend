@@ -1,24 +1,29 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import UserIdentityRow from "@/components/users/UserIdentityRow";
+import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { ClientUserService } from "@/lib/services/clientUserService";
+import type { ApiSessionUser } from "@/lib/types/user";
+import type { UserProfileSummary } from "@/lib/api/users";
 
 interface HomeContentProps {
   strings: any;
 }
 
-const buildMockUserProfile = (robloxId: string) => {
-  const id = robloxId.toString();
+const buildFallbackProfile = (user: ApiSessionUser): UserProfileSummary => {
+  const displayName = user.siteRank ? `${user.siteRank} ${user.robloxId}` : `User ${user.robloxId}`;
   return {
-    displayName: `User ${id}`,
-    username: `user${id}`,
-    profileImage: null as string | null,
+    userId: user.userId,
+    displayName,
+    username: user.robloxId,
+    profileImage: null,
   };
 };
 
 export default function HomeContent({ strings }: HomeContentProps) {
-  const [authenticated, setAuthenticated] = useState(false);
-  const [userInfo, setUserInfo] = useState<ReturnType<typeof buildMockUserProfile> | null>(null);
+  const [sessionUser, setSessionUser] = useState<ApiSessionUser | null>(null);
+  const [sessionLoading, setSessionLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
@@ -27,17 +32,17 @@ export default function HomeContent({ strings }: HomeContentProps) {
       .then((session) => {
         if (!active) return;
         if (session.authenticated && session.user) {
-          setAuthenticated(true);
-          setUserInfo(buildMockUserProfile(session.user.robloxId.toString()));
+          setSessionUser(session.user);
         } else {
-          setAuthenticated(false);
-          setUserInfo(null);
+          setSessionUser(null);
         }
       })
       .catch(() => {
         if (!active) return;
-        setAuthenticated(false);
-        setUserInfo(null);
+        setSessionUser(null);
+      })
+      .finally(() => {
+        if (active) setSessionLoading(false);
       });
 
     return () => {
@@ -46,6 +51,14 @@ export default function HomeContent({ strings }: HomeContentProps) {
   }, []);
 
   const loginHref = ClientUserService.loginUrl();
+  const userId = sessionUser?.userId ?? null;
+  const { profiles, loading: profileLoading } = useUserProfiles(userId ? [userId] : []);
+  const profileFromApi = userId ? profiles[userId] : null;
+  const resolvedProfile = profileFromApi ?? (sessionUser ? buildFallbackProfile(sessionUser) : null);
+  const authenticated = Boolean(sessionUser);
+  const welcomeName = resolvedProfile?.displayName ?? "there";
+  const welcomeMessage = strings.home.welcomeBack.replace("{name}", welcomeName);
+  const isProfileLoading = Boolean(userId) && profileLoading && !profileFromApi;
 
   return (
     <div className="min-h-screen bg-[var(--background)] p-8">
@@ -54,22 +67,25 @@ export default function HomeContent({ strings }: HomeContentProps) {
           {strings.home.title}
         </h1>
 
-        {authenticated && userInfo ? (
+        {authenticated && resolvedProfile ? (
           <div className="bg-[var(--background-secondary)] rounded-lg p-6 mb-8">
             <h2 className="text-2xl font-semibold text-[var(--text)] mb-4">
-              {strings.home.welcomeBack.replace('{name}', userInfo.displayName)}
+              {welcomeMessage}
             </h2>
-            <div className="flex items-center space-x-4">
-              <img
-                src={userInfo.profileImage || '/icon.png'}
-                alt={`${userInfo.displayName}'s avatar`}
-                className="w-16 h-16 rounded-full"
+            <div className="flex flex-col md:flex-row md:items-center md:space-x-6 gap-4">
+              <UserIdentityRow
+                profile={resolvedProfile}
+                loading={!resolvedProfile && isProfileLoading}
+                size="lg"
+                showUsername
               />
-              <div>
-                <p className="text-[var(--text)] font-medium">@{userInfo.username}</p>
-                <p className="text-[var(--text)] opacity-75">{strings.home.readyToManage}</p>
-              </div>
+              <p className="text-[var(--text)] opacity-75">{strings.home.readyToManage}</p>
             </div>
+          </div>
+        ) : sessionLoading ? (
+          <div className="bg-[var(--background-secondary)] rounded-lg p-6 mb-8 animate-pulse">
+            <div className="w-1/3 h-6 bg-[var(--background-muted)] rounded mb-4" />
+            <div className="w-full h-4 bg-[var(--background-muted)] rounded" />
           </div>
         ) : (
           <div className="bg-[var(--background-secondary)] rounded-lg p-6 mb-8">
