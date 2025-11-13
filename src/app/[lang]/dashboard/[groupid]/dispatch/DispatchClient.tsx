@@ -18,14 +18,10 @@ import {
   importDispatchVehicles,
   updateDispatchVehicle,
 } from "@/lib/api/dispatch";
-import type { RoomDetails } from "@/lib/api/rooms";
-import { fetchRoomDetails } from "@/lib/api/rooms";
-
 interface DispatchClientProps {
   groupId: string;
   groupName: string | null;
   initialRoomId: string | null;
-  initialRoom: RoomDetails | null;
 }
 
 type BannerState = {
@@ -46,6 +42,34 @@ const HOTKEYS = [
   { combo: "Shift + Delete", description: "Remove focused vehicle" },
   { combo: "Enter", description: "Save the current route input" },
   { combo: "Esc", description: "Clear selection / revert draft" },
+];
+
+const mapHotkeys = (...combos: string[]) =>
+  combos
+    .map((combo) => HOTKEYS.find((hotkey) => hotkey.combo === combo))
+    .filter((entry): entry is (typeof HOTKEYS)[number] => Boolean(entry));
+
+const CONTROL_SECTIONS = [
+  {
+    title: "Search & Focus",
+    description: "Target vehicles quickly and lock onto their route inputs.",
+    items: mapHotkeys("⌘/Ctrl + K or /", "Shift + R", "Enter", "Esc"),
+  },
+  {
+    title: "Navigation",
+    description: "Move through the live list without leaving the keyboard.",
+    items: mapHotkeys("Arrow ↑ / ↓", "Alt + Arrow ←/→", "Alt + 1-4"),
+  },
+  {
+    title: "Assignments",
+    description: "Flip staffing and towing flags on the focused vehicle.",
+    items: mapHotkeys("Shift + A", "Shift + T"),
+  },
+  {
+    title: "Management",
+    description: "Perform vehicle-level maintenance actions.",
+    items: mapHotkeys("Shift + Delete"),
+  },
 ];
 
 const STATUS_STYLES: Record<DispatchConnectionStatus, { label: string; className: string }> = {
@@ -119,19 +143,11 @@ function parseVehicleSeeds(payload: string): DispatchVehicleSeed[] {
   return seeds;
 }
 
-const DispatchClient: React.FC<DispatchClientProps> = ({
-  groupId,
-  groupName,
-  initialRoomId,
-  initialRoom,
-}) => {
+const DispatchClient: React.FC<DispatchClientProps> = ({ groupId, groupName, initialRoomId }) => {
   const [banner, setBanner] = React.useState<BannerState>(null);
-  const [roomInput, setRoomInput] = React.useState(() => initialRoomId ?? "");
-  const [activeRoomId, setActiveRoomId] = React.useState(() => initialRoomId ?? "");
-  const [roomInfo, setRoomInfo] = React.useState<RoomDetails | null>(initialRoom);
-  const [roomInfoLoading, setRoomInfoLoading] = React.useState(false);
   const [importing, setImporting] = React.useState(false);
   const [search, setSearch] = React.useState("");
+  const [controlsOpen, setControlsOpen] = React.useState(false);
   const [focusedVehicleId, setFocusedVehicleId] = React.useState<string | null>(null);
   const [pendingVehicles, setPendingVehicles] = React.useState<Record<string, boolean>>({});
   const [draftRoutes, setDraftRoutes] = React.useState<Record<string, string>>({});
@@ -142,7 +158,10 @@ const DispatchClient: React.FC<DispatchClientProps> = ({
   const routeInputRefs = React.useRef<Record<string, HTMLInputElement | null>>({});
   const vehicleRowRefs = React.useRef<Record<string, HTMLDivElement | null>>({});
 
-  const connectedRoomId = sanitizeRoomId(activeRoomId) || null;
+  const connectedRoomId = React.useMemo(() => {
+    const trimmed = sanitizeRoomId(initialRoomId ?? "");
+    return trimmed || null;
+  }, [initialRoomId]);
   const {
     vehicles,
     status,
@@ -342,46 +361,6 @@ const DispatchClient: React.FC<DispatchClientProps> = ({
     [activeCategory, selectCategoryByIndex]
   );
 
-  const connectToRoom = React.useCallback((value: string) => {
-    const trimmed = sanitizeRoomId(value);
-    setActiveRoomId(trimmed);
-    setRoomInput(trimmed);
-    setBanner({
-      type: "info",
-      message: trimmed ? `Connecting to room ${trimmed}...` : "Room disconnected. Enter a new room ID to begin.",
-    });
-  }, []);
-
-  const handleRoomSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    connectToRoom(roomInput);
-  };
-
-  const disconnectRoom = () => {
-    connectToRoom("");
-  };
-
-  const loadRoomDetails = React.useCallback(async () => {
-    if (!connectedRoomId) {
-      setRoomInfo(null);
-      return;
-    }
-    setRoomInfoLoading(true);
-    try {
-      const details = await fetchRoomDetails(connectedRoomId);
-      setRoomInfo(details);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Unable to load room info.";
-      setBanner({ type: "error", message });
-    } finally {
-      setRoomInfoLoading(false);
-    }
-  }, [connectedRoomId]);
-
-  React.useEffect(() => {
-    void loadRoomDetails();
-  }, [loadRoomDetails]);
-
   const findVehicle = React.useCallback(
     (vehicleId: string) => vehicles.find((vehicle) => vehicle.id === vehicleId) ?? null,
     [vehicles]
@@ -512,6 +491,14 @@ const DispatchClient: React.FC<DispatchClientProps> = ({
 
   const handleHotkeys = React.useCallback(
     (event: KeyboardEvent) => {
+      if (controlsOpen) {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          setControlsOpen(false);
+        }
+        return;
+      }
+
       const modifier = event.metaKey || event.ctrlKey;
       const target = event.target as HTMLElement | null;
       const tagName = target?.tagName;
@@ -613,6 +600,8 @@ const DispatchClient: React.FC<DispatchClientProps> = ({
       toggleTowing,
       handleDelete,
       focusVehicle,
+      controlsOpen,
+      setControlsOpen,
     ]
   );
 
@@ -658,156 +647,57 @@ const DispatchClient: React.FC<DispatchClientProps> = ({
             {error && <span className="text-xs text-red-300">Stream error: {error}</span>}
           </div>
         </div>
-        <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center">
-          <div className="flex flex-1 items-center gap-2">
-            <label htmlFor="vehicle-search" className={LABEL_BASE}>
-              Search
-            </label>
-            <input
-              id="vehicle-search"
-              ref={searchRef}
-              type="text"
-              placeholder="Filter by ID, owner, depot, route..."
-              className={`${INPUT_BASE} flex-1`}
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-          </div>
-          <div className="flex flex-wrap gap-2 text-xs text-[var(--text-muted)]">
-            {HOTKEYS.map((hotkey) => (
-              <span key={hotkey.combo} className="rounded-full border border-[var(--background-muted)] px-3 py-1">
-                <span className="font-semibold text-[var(--text)]">{hotkey.combo}</span>
-                <span className="ml-2 opacity-80">{hotkey.description}</span>
-              </span>
-            ))}
+        <div className="mt-4 flex flex-col gap-3">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+            <div className="flex flex-1 flex-col gap-1">
+              <label htmlFor="vehicle-search" className={LABEL_BASE}>
+                Search
+              </label>
+              <input
+                id="vehicle-search"
+                ref={searchRef}
+                type="text"
+                placeholder="Filter by ID, owner, depot, route..."
+                className={`${INPUT_BASE} w-full`}
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={handleImport}
+                className="rounded-md bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-500 disabled:opacity-60"
+                disabled={!connectedRoomId || importing}
+              >
+                {importing ? "Importing…" : "Import vehicles"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setControlsOpen(true)}
+                className="rounded-md border border-[var(--background-muted)] px-4 py-2 text-sm font-semibold text-[var(--text)] hover:border-[var(--text-muted)]/60"
+              >
+                Controls
+              </button>
+            </div>
           </div>
         </div>
       </PageBox>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
-        <PageBox className="bg-[var(--background-secondary)]">
-          <form className="space-y-4" onSubmit={handleRoomSubmit}>
-            <div>
-              <label htmlFor="room-id" className={LABEL_BASE}>
-                Room ID
-              </label>
-              <div className="mt-1 flex gap-2">
-                <input
-                  id="room-id"
-                  type="text"
-                  className={`${INPUT_BASE} flex-1`}
-                  placeholder="e.g. 7B2C-ALFA"
-                  value={roomInput}
-                  onChange={(event) => setRoomInput(event.target.value)}
-                />
-                <button
-                  type="submit"
-                  className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500"
-                >
-                  {connectedRoomId ? "Switch" : "Connect"}
-                </button>
-              </div>
-              {connectedRoomId && (
-                <button
-                  type="button"
-                  onClick={disconnectRoom}
-                  className="mt-2 text-xs text-red-400 hover:text-red-300"
-                >
-                  Disconnect
-                </button>
-              )}
-            </div>
-
-            <div className="rounded-lg border border-[var(--background-muted)] p-3 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="font-semibold">Room overview</span>
-                <button
-                  type="button"
-                  onClick={loadRoomDetails}
-                  className="text-xs text-blue-300 hover:text-blue-200"
-                  disabled={roomInfoLoading || !connectedRoomId}
-                >
-                  Refresh
-                </button>
-              </div>
-              {roomInfoLoading && <p className="mt-2 text-xs text-[var(--text-muted)]">Loading room...</p>}
-              {!roomInfoLoading && connectedRoomId && roomInfo && (
-                <dl className="mt-3 space-y-2 text-xs text-[var(--text-muted)]">
-                  <div className="flex justify-between gap-2">
-                    <dt>Group</dt>
-                    <dd className="text-[var(--text)]">{roomInfo.groupId}</dd>
-                  </div>
-                  <div className="flex justify-between gap-2">
-                    <dt>Creator</dt>
-                    <dd className="text-[var(--text)]">{roomInfo.creatorId}</dd>
-                  </div>
-                  <div className="flex justify-between gap-2">
-                    <dt>Opened</dt>
-                    <dd className="text-[var(--text)]">
-                      {new Date(roomInfo.createdAt).toLocaleString()}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between gap-2">
-                    <dt>Expires</dt>
-                    <dd className="text-[var(--text)]">
-                      {new Date(roomInfo.expiresAt).toLocaleString()}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between gap-2">
-                    <dt>Users</dt>
-                    <dd className="text-[var(--text)]">{roomInfo.users.length}</dd>
-                  </div>
-                  <div className="flex justify-between gap-2">
-                    <dt>Vehicles</dt>
-                    <dd className="text-[var(--text)]">{roomInfo.vehicles}</dd>
-                  </div>
-                </dl>
-              )}
-              {!roomInfoLoading && connectedRoomId && !roomInfo && (
-                <p className="mt-2 text-xs text-[var(--text-muted)]">
-                  Could not load details for this room. Check that the ID is correct.
-                </p>
-              )}
-              {!connectedRoomId && (
-                <p className="mt-2 text-xs text-[var(--text-muted)]">
-                  Connect to a room to view metadata and live vehicles.
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2 text-sm">
-              <button
-                type="button"
-                onClick={handleImport}
-                className="w-full rounded-md bg-amber-600 px-4 py-2 font-semibold text-white hover:bg-amber-500 disabled:opacity-60"
-                disabled={!connectedRoomId || importing}
-              >
-                {importing ? "Importing…" : "Import vehicle JSON"}
-              </button>
-              <p className="text-xs text-[var(--text-muted)]">
-                This opens a prompt to paste the ExportVehicleList output. Imports now live in the room menu,
-                so dispatch remains keyboard-focused.
-              </p>
-            </div>
-          </form>
-        </PageBox>
-
-        <div className="space-y-6">
-          {CATEGORY_SEQUENCE.map((category) => {
-            const isActiveCategory = activeCategory === category;
-            return (
-              <PageBox
-                key={category}
-                className={`bg-[var(--background-secondary)] ${
-                  isActiveCategory ? "ring-2 ring-blue-500/40 border border-blue-500/60" : ""
-                }`}
-              >
+      <div className="mt-6 space-y-6">
+        {CATEGORY_SEQUENCE.map((category) => {
+          const isActiveCategory = activeCategory === category;
+          return (
+            <PageBox
+              key={category}
+              className={`bg-[var(--background-secondary)] ${
+                isActiveCategory ? "ring-2 ring-blue-500/40 border border-blue-500/60" : ""
+              }`}
+            >
               <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h2 className="text-lg font-semibold">{VEHICLE_CATEGORY_LABELS[category]}</h2>
-                  <p className="text-sm text-[var(--text-muted)]">
-                    {CATEGORY_DESCRIPTIONS[category]}
-                  </p>
+                  <p className="text-sm text-[var(--text-muted)]">{CATEGORY_DESCRIPTIONS[category]}</p>
                 </div>
                 <span className="text-sm text-[var(--text-muted)]">
                   {grouped[category].length} of {vehicles.length}
@@ -816,12 +706,10 @@ const DispatchClient: React.FC<DispatchClientProps> = ({
 
               {grouped[category].length === 0 ? (
                 <p className="rounded-md border border-dashed border-[var(--background-muted)] p-4 text-sm text-[var(--text-muted)]">
-                  {normalizedSearch
-                    ? "No vehicles match this filter."
-                    : "Nothing has been placed in this bucket yet."}
+                  {normalizedSearch ? "No vehicles match this filter." : "Nothing has been placed in this bucket yet."}
                 </p>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {grouped[category].map((vehicle) => {
                     const owner = ownerProfiles[vehicle.ownerId];
                     const pending = !!pendingVehicles[vehicle.id];
@@ -838,22 +726,24 @@ const DispatchClient: React.FC<DispatchClientProps> = ({
                             delete vehicleRowRefs.current[vehicle.id];
                           }
                         }}
-                        className={`rounded-lg border border-[var(--background-muted)] p-4 transition ${
+                        className={`rounded-lg border border-[var(--background-muted)] p-3 text-sm transition ${
                           focused ? "ring-2 ring-blue-500" : "hover:border-[var(--text-muted)]/40"
                         } ${pending ? "opacity-70" : ""}`}
                         tabIndex={0}
                         onClick={() => focusVehicle(vehicle.id)}
                       >
-                        <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--text-muted)]">
-                          <div className="font-mono text-sm text-[var(--text)]">{vehicle.id}</div>
-                          <div className="flex gap-4">
-                            <span>{vehicle.depot}</span>
-                            <span>{vehicle.name}</span>
+                        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--text)]">
+                            <span className="font-mono text-base font-semibold">{vehicle.id}</span>
+                            <span className="font-semibold">{vehicle.name}</span>
                           </div>
+                          <span className="text-xs uppercase tracking-wide text-[var(--text-muted)]">
+                            {vehicle.depot}
+                          </span>
                         </div>
 
-                        <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,1fr)_120px_120px]">
-                          <div>
+                        <div className="mt-2 grid gap-2 text-xs md:grid-cols-[minmax(0,1fr)_110px_110px]">
+                          <div className="flex flex-col gap-1">
                             <label className={LABEL_BASE}>Route</label>
                             <input
                               ref={(node) => {
@@ -865,7 +755,7 @@ const DispatchClient: React.FC<DispatchClientProps> = ({
                               }}
                               type="text"
                               value={routeValue}
-                              className={`${INPUT_BASE} mt-1 w-full`}
+                              className={`${INPUT_BASE} mt-1 w-full py-1.5 text-sm`}
                               onFocus={() => {
                                 activeRouteRef.current = vehicle.id;
                                 focusVehicle(vehicle.id, { scroll: false });
@@ -895,48 +785,48 @@ const DispatchClient: React.FC<DispatchClientProps> = ({
                             />
                           </div>
 
-                          <div>
+                          <div className="flex flex-col gap-1">
                             <label className={LABEL_BASE}>Assigned</label>
-                            <label className="mt-1 flex items-center gap-2 text-sm">
+                            <label className="mt-1 flex items-center gap-2 text-xs text-[var(--text)]">
                               <input
                                 type="checkbox"
                                 checked={vehicle.assigned}
                                 onChange={(event) => toggleAssigned(vehicle.id, event.target.checked)}
                                 onFocus={() => focusVehicle(vehicle.id, { scroll: false })}
                                 disabled={pending}
-                                className="h-4 w-4"
+                                className="h-3.5 w-3.5"
                               />
                               <span>{vehicle.assigned ? "Ready" : "Unassigned"}</span>
                             </label>
                           </div>
 
-                          <div>
+                          <div className="flex flex-col gap-1">
                             <label className={LABEL_BASE}>Towing</label>
-                            <label className="mt-1 flex items-center gap-2 text-sm">
+                            <label className="mt-1 flex items-center gap-2 text-xs text-[var(--text)]">
                               <input
                                 type="checkbox"
                                 checked={vehicle.towing}
                                 onChange={(event) => toggleTowing(vehicle.id, event.target.checked)}
                                 onFocus={() => focusVehicle(vehicle.id, { scroll: false })}
                                 disabled={pending}
-                                className="h-4 w-4"
+                                className="h-3.5 w-3.5"
                               />
                               <span>{vehicle.towing ? "Active" : "Idle"}</span>
                             </label>
                           </div>
                         </div>
 
-                        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--text-muted)]">
-                          <div className="flex flex-col">
-                            <span className="text-[var(--text)]">
+                        <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--text-muted)]">
+                          <div className="flex flex-col leading-tight">
+                            <span className="text-sm text-[var(--text)]">
                               {owner?.displayName ?? `User ${vehicle.ownerId}`}
                             </span>
                             <span>{owner ? `@${owner.username}` : `Owner #${vehicle.ownerId}`}</span>
                           </div>
-                          <div className="flex gap-3">
+                          <div className="flex gap-2">
                             <button
                               type="button"
-                              className="text-xs text-blue-300 hover:text-blue-200"
+                              className="rounded px-2 py-1 text-xs text-blue-300 hover:text-blue-200"
                               onClick={() => {
                                 navigator.clipboard?.writeText(vehicle.id).catch(() => undefined);
                                 setBanner({ type: "info", message: `Copied ${vehicle.id} to clipboard.` });
@@ -946,7 +836,7 @@ const DispatchClient: React.FC<DispatchClientProps> = ({
                             </button>
                             <button
                               type="button"
-                              className="text-xs text-red-400 hover:text-red-300"
+                              className="rounded px-2 py-1 text-xs text-red-400 hover:text-red-300"
                               onClick={() => void handleDelete(vehicle.id)}
                               disabled={pending}
                             >
@@ -959,11 +849,66 @@ const DispatchClient: React.FC<DispatchClientProps> = ({
                   })}
                 </div>
               )}
-              </PageBox>
-            );
-          })}
-        </div>
+            </PageBox>
+          );
+        })}
       </div>
+
+      {controlsOpen && (
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 px-4 py-8"
+          onClick={() => setControlsOpen(false)}
+        >
+          <div
+            className="w-full max-w-lg rounded-lg border border-[var(--background-muted)] bg-[var(--background-secondary)] p-6 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold text-[var(--text)]">Keyboard controls</h2>
+                <p className="text-sm text-[var(--text-muted)]">Reference for selection, routing, and triage actions.</p>
+              </div>
+              <button
+                type="button"
+                className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]"
+                onClick={() => setControlsOpen(false)}
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-4">
+              <p className="text-sm text-[var(--text-muted)]">
+                Everything you can do from the keyboard: focus, navigate, assign, and clean up without leaving the board.
+              </p>
+              <div className="space-y-3 text-sm">
+                {CONTROL_SECTIONS.map((section) => (
+                  <div
+                    key={section.title}
+                    className="rounded-lg border border-[var(--background-muted)] bg-[var(--background)] p-4"
+                  >
+                    <h3 className="text-base font-semibold text-[var(--text)]">{section.title}</h3>
+                    {section.description && (
+                      <p className="mt-1 text-xs text-[var(--text-muted)]">{section.description}</p>
+                    )}
+                    <div className="mt-3 space-y-2">
+                      {section.items.map((item) => (
+                        <div
+                          key={item.combo}
+                          className="flex flex-col gap-1 rounded border border-[var(--background-muted)] px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+                        >
+                          <span className="font-mono text-base text-[var(--text)]">{item.combo}</span>
+                          <span className="text-sm text-[var(--text-muted)]">{item.description}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -17,7 +17,6 @@ export default async function DispatchPage({
       groupId={groupid}
       groupName={group?.name ?? null}
       initialRoomId={room?.roomId ?? null}
-      initialRoom={room}
     />
   );
 }
