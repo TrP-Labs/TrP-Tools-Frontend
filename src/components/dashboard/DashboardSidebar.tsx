@@ -1,6 +1,6 @@
 "use client";
 import React from 'react';
-import { IconHome, IconUsers, IconSettings, IconActivity, IconCalendar, IconDashboard, IconRadio, IconRobot } from '@tabler/icons-react';
+import { IconHome, IconUsers, IconSettings, IconActivity, IconCalendar, IconDashboard, IconRadio, IconRobot, IconRoute } from '@tabler/icons-react';
 import BaseSidebar from '@/components/BaseSidebar';
 import { useParams } from 'next/navigation';
 
@@ -49,14 +49,21 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ className }) => {
       RequiresAccount: false
     },
     {
-      ID: 6,
+      ID : 6,
+      Icon: IconRoute,
+      Text: "Manage Routes",
+      url: `/dashboard/${groupid}/routes`,
+      RequiresAccount: false
+    },
+    {
+      ID: 7,
       Icon: IconRadio,
       Text: 'Dispatch',
       url: `/dashboard/${groupid}/dispatch`,
       RequiresAccount: false
     },
         {
-      ID: 7,
+      ID: 8,
       Icon: IconRobot,
       Text: 'Bot',
       url: `/dashboard/${groupid}/bot`,
